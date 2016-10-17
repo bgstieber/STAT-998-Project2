@@ -3,7 +3,7 @@ library(plyr)
 library(dplyr)
 library(ggplot2)
 theme_set(theme_bw())
-library(lmer) #may need to fit mixed models
+library(lme4) #may need to fit mixed models
 library(glmnet) #may need to use model selection
 
 wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv")
@@ -12,6 +12,9 @@ wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv")
 
 wls$doc2004_bin <- ifelse(wls$doc2004 == 'Yes', 1, 0)
 wls$doc2011_bin <- ifelse(wls$doc2011 == 'Yes', 1, 0)
+
+wls$age_2004 <- 2004 - wls$birthyr
+wls$age_2011 <- 2011 - wls$birthyr
 
 
 table(wls$doc2004_bin, wls$doc2011_bin, useNA = 'always',
