@@ -1,0 +1,9 @@
+(1) Four response variables are listed, but it seems like we actually might be most interested in the
+doc variables. What is the importance of the HA variables?
+	- better to just use HAC and doc?
+(2) Obviously, if our dependent variable is from 2004, we can't use the variables from 2011,
+but is it still okay to use the 2004 variables?
+	- we can't really determine _when_ a HA happened...
+
+(3) A surprising amount of missing data for age - can we impute the age for graduates since
+we know that _most_ people graduate high school at 18?
