@@ -7,6 +7,7 @@ library(scales)
 #random intercept for family
 library(lme4) #may need to fit mixed models
 library(glmnet) #may need to use model selection
+library(smbinning)
 
 wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
              data.table = FALSE)
@@ -241,6 +242,19 @@ wls_summary <- c("sumangerindex2004", "sumangerindex2011", "sumhostilityindex200
 
 t(apply(wls[wls_summary], 2, summary))
 
+#start creating plots
+ggplot(wls, aes(x = BMI2004, y = doc2004_bin, colour = Rtype))+
+    stat_summary(fun.y = 'mean', geom = 'point')+
+    stat_smooth(se = F, method = 'lm')
 
+mean(is.na(wls[!is.na(wls$doc2004_bin), ]$BMI2004))
 
+smbinning(df = wls, y = 'doc2004_bin', x = 'BMI2004')
 
+ggplot(wls, aes(x = BMI1993, y = doc2004_bin))+
+    stat_summary(fun.y = 'mean', geom = 'point')+
+    stat_smooth(se = F, method = 'lm')
+
+mean(is.na(wls[!is.na(wls$doc2004_bin),]$BMI1993))
+
+smbinning(df = wls, y = 'doc2004_bin', x = 'BMI1993')
