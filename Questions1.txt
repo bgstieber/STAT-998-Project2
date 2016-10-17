@@ -5,5 +5,8 @@ doc variables. What is the importance of the HA variables?
 but is it still okay to use the 2004 variables?
 	- we can't really determine _when_ a HA happened...
 
-(3) A surprising amount of missing data for age - can we impute the age for graduates since
-we know that _most_ people graduate high school at 18?
+(3) A suprising amount of missing data for birthyr for graduates. Can we just impute 1939 for missing
+birth years for graduates?
+
+(4) Some of the indices seem to be on different scales. Is there a technique that's normally used so 
+that we could tranform the indices so they're all on the same, meaningful scale?
