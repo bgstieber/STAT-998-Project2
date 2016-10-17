@@ -10,3 +10,9 @@ birth years for graduates?
 
 (4) Some of the indices seem to be on different scales. Is there a technique that's normally used so 
 that we could tranform the indices so they're all on the same, meaningful scale?
+    - Why are there so many missing values?!
+
+(5) Follow up to indices question: some spread between indicies - are there meaningful
+breaks in the indices? Ways to transform from many values to a few, well 
+defined categories?
+    - maybe this is where a decision tree could be handy?
