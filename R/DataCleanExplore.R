@@ -3,10 +3,13 @@ library(plyr)
 library(dplyr)
 library(ggplot2)
 theme_set(theme_bw())
+library(scales)
+#random intercept for family
 library(lme4) #may need to fit mixed models
 library(glmnet) #may need to use model selection
 
-wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv")
+wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
+             data.table = FALSE)
 
 #convert doc2004 and doc2011 to binary
 
@@ -21,8 +24,8 @@ table(wls$doc2004_bin, wls$doc2011_bin, useNA = 'always',
       dnn = list('doc2004','doc2011'))
 
 #what is the appropriate response variable?
-apply(wls[,3:8, with = F], 2, function(x) sum(is.na(x)))
-apply(wls[,3:8, with = F], 2, function(x) mean(is.na(x)))
+apply(wls[,3:8], 2, function(x) sum(is.na(x)))
+apply(wls[,3:8], 2, function(x) mean(is.na(x)))
 
 #HA2011 and HA2004 exhibit more missingness than
 #HAC2011 and HAC2004
@@ -148,3 +151,96 @@ do.call('rbind',
 # 2004  0.06293706 0.6433566 0.7552448
 # 2011  0.09174312 0.5688073 0.7889908
 # other 0.77777778 0.7777778 0.8888889
+
+
+
+wls_g <- subset(wls, Rtype == 'g')
+wls_s <- subset(wls, Rtype == 's')
+
+miss_g <- stack(apply(wls_g, 2, function(x) mean(is.na(x))),
+              stringsAsFactors = FALSE)
+
+miss_g$ind <- as.character(miss_g$ind)
+
+miss_g$year <- substr(miss_g$ind, start = nchar(miss_g$ind) - 3, 
+                    stop = nchar(miss_g$ind))
+
+miss_g$year <- ifelse(! miss_g$year %in% c('1993','2004','2011'), 
+                    'other', miss_g$year)
+
+miss_g <- miss_g %>% arrange(-values)
+miss_g$Rtype = 'g'
+
+miss_s <- stack(apply(wls_s, 2, function(x) mean(is.na(x))),
+                stringsAsFactors = FALSE)
+
+miss_s$ind <- as.character(miss_s$ind)
+
+miss_s$year <- substr(miss_s$ind, start = nchar(miss_s$ind) - 3, 
+                      stop = nchar(miss_s$ind))
+
+miss_s$year <- ifelse(! miss_s$year %in% c('1993','2004','2011'), 
+                      'other', miss_s$year)
+
+miss_s <- miss_s %>% arrange(-values)
+
+miss_s$Rtype = 's'
+
+miss_gs <- rbind(miss_g, miss_s)
+
+miss_gs %>% 
+    group_by(ind) %>% 
+    summarise(meds = median(values)) %>%
+    arrange(desc(meds)) %>%
+    select(ind) -> levels_ind
+
+levels_ind <- c(levels_ind)$ind
+
+miss_gs$ind_f <- factor(miss_gs$ind, levels = c(levels_ind))
+
+#less missingness for 2004 versus 2011
+#less missingness for g versus s
+
+ggplot(miss_gs, aes(x = ind_f, y = values, colour = year))+
+    geom_point()+
+    coord_flip()+
+    facet_wrap(~Rtype)+
+    xlab('')+ylab('Percentage of Missing Values')+
+    theme(axis.text.y = element_blank(),
+          panel.grid = element_blank(),
+          axis.ticks = element_blank())+
+    scale_y_continuous(labels = percent)
+
+#a lot of the variables are related to survey questions
+#let's start doing some cross tabulations
+quick_table <- function(x, y){
+    names_x = match.call()[2]
+    names_y = match.call()[c(3)]
+    t_xy <- table(x, y, dnn = c(names_x, names_y))
+    missing_table <- table(is.na(x), is.na(y),
+                           dnn = c(names_x, names_y))
+    list(
+        'table' = t_xy,
+        'chisq' = chisq.test(t_xy, correct = FALSE),
+        'missing' = missing_table
+    )
+}
+
+
+#look at wls summary variables
+
+wls_summary <- c("sumangerindex2004", "sumangerindex2011", "sumhostilityindex2004", 
+                 "sumhostilityindex2011", "sumanxietyindex2004", "sumanxietyindex2011", 
+                 "sumwellbeing1993", "sumdepressionindex1993", "sumdepressionindex2004", 
+                 "sumdepressionindex2011", "sumfamilystress1993", "extraversion1993", 
+                 "extraversion2004", "extraversion2011", "openness1993", "openness2004", 
+                 "openness2011", "neuroticism1993", "neuroticism2004", "neuroticism2011", 
+                 "conscientiousness1993", "conscientiousness2004", "conscientiousness2011", 
+                 "agreeableness1993", "agreeableness2004", "agreeableness2011"
+)
+
+t(apply(wls[wls_summary], 2, summary))
+
+
+
+
