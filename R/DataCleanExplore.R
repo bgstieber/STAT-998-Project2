@@ -317,9 +317,17 @@ table_chisq_doc11 %>%
     head(., 20) -> doc11_top20
 
 
-sort(table(c(doc04_top20$variable, doc11_top20$variable)),
+top_variables <- sort(table(c(doc04_top20$variable, doc11_top20$variable)),
      decreasing = TRUE) %>% 
     stack %>%
     .[,c(2,1)]
 
 #age, weight, smoking, health conditions
+
+#there are some variables we can recode
+#smokyrsX2004 - code everything over 40 (35?) to 40
+
+
+ggplot(wls, aes(x = BMI2004, y = doc2004_bin, colour = factor(highchol2004)))+
+    stat_summary(fun.y = 'mean', geom = 'point')+
+    stat_smooth(method = 'lm',se = F)
