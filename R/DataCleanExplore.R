@@ -17,12 +17,18 @@ wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
 wls$doc2004_bin <- ifelse(wls$doc2004 == 'Yes', 1, 0)
 wls$doc2011_bin <- ifelse(wls$doc2011 == 'Yes', 1, 0)
 
+#look at age a bit more closely
+
 wls$age_2004 <- 2004 - wls$birthyr
 wls$age_2011 <- 2011 - wls$birthyr
 
-
+#170 with doc2004 = 1 but doc2011 = 0??
 table(wls$doc2004_bin, wls$doc2011_bin, useNA = 'always',
       dnn = list('doc2004','doc2011'))
+
+#63 with hac2004 = 'yes' but hac2011 = 'no'??
+table(wls$HAC2004, wls$HAC2011, useNA = 'always',
+      dnn = c('hac2004','hac2011'))
 
 #what is the appropriate response variable?
 apply(wls[,3:8], 2, function(x) sum(is.na(x)))
@@ -222,6 +228,7 @@ quick_table <- function(x, y){
                            dnn = c(names_x, names_y))
     list(
         'table' = t_xy,
+        'proptable' = prop.table(t_xy, margin = 1),
         'chisq' = chisq.test(t_xy, correct = FALSE),
         'missing' = missing_table
     )
@@ -258,3 +265,61 @@ ggplot(wls, aes(x = BMI1993, y = doc2004_bin))+
 mean(is.na(wls[!is.na(wls$doc2004_bin),]$BMI1993))
 
 smbinning(df = wls, y = 'doc2004_bin', x = 'BMI1993')
+
+names_wls_93_04 <- names(wls)[str_detect(names(wls), "1993|2004")]
+names_wls_93_04 <- names_wls_93_04[-c(1:3, 192)]
+
+names_wls_93_04_11 <- names(wls)[str_detect(names(wls), "1993|2004|2011")]
+names_wls_93_04_11 <- names_wls_93_04_11[-c(1:6)]
+
+
+table_chisq_doc04 <- data.frame(variable = names_wls_93_04,
+                          chisq = 0, stringsAsFactors = FALSE)
+
+table_chisq_doc11 <- data.frame(variable = names_wls_93_04_11,
+                                chisq = 0, stringsAsFactors = FALSE)
+
+
+for(i in 1:nrow(table_chisq_doc04)){
+    
+    table_chisq_doc04[i,2] =
+      chisq.test(
+        table(
+            data.frame(wls['doc2004_bin'],
+              wls[table_chisq_doc04[i,1]]
+              )
+            )
+        )$statistic
+    
+}
+
+table_chisq_doc04 %>%
+    filter(variable != 'doc2004_bin') %>%
+    arrange(desc(chisq)) %>%
+    head(., 20) -> doc04_top20
+
+for(i in 1:nrow(table_chisq_doc11)){
+    
+    table_chisq_doc11[i,2] =
+        chisq.test(
+            table(
+                data.frame(wls['doc2011_bin'],
+                           wls[table_chisq_doc11[i,1]]
+                )
+            )
+        )$statistic
+    
+}
+
+table_chisq_doc11 %>%
+    filter(! variable %in% c('doc2004_bin','doc2011_bin')) %>%
+    arrange(desc(chisq)) %>%
+    head(., 20) -> doc11_top20
+
+
+sort(table(c(doc04_top20$variable, doc11_top20$variable)),
+     decreasing = TRUE) %>% 
+    stack %>%
+    .[,c(2,1)]
+
+#age, weight, smoking, health conditions
