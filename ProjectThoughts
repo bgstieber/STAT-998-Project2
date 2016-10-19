@@ -1,0 +1,42 @@
+Possible options for analysis:
+
+Clearly, a logistic regression will be the correct model for this case. Sure, we could try
+some decision tree framework, but I don't think that's really what the client wants.
+
+We'll have (at least) four models - one for each response. But how will we choose the
+"correct" models? 
+
+I think we should build up a simple starting model, adjusting for the "no-brainer" variables
+like:
+
+(1) demographics
+    - age, income, weight, gender
+
+(2) health variables
+    - high blood pressure, high cholesterol
+    
+etc.
+
+I think a nice way to estimate how important the variables are would be to calculate the
+misclassification rate when a certain variable is exclude from the model
+like:
+
+var | coef  | p-val | misclassification rate when removed   |
+x   |       |       |                                       |    
+y   |       |       |                                       |
+z   |       |       |                                       |
+
+where we calculate misclassification rate using the average misclassification rate
+from a model excluding variable j fit on 1000 bootstrapped samples.
+
+
+For presentation, we can create a few things:
+
+Four column, ten row table: each column is a response variable, the variables
+represent the top 10 highest chi-squared statistic values. Then we order them so that
+it makes sense. (already completed in excel)
+
+Also list the ten variables that were in the top 30 for each variable 
+
+
+A few four panel plots which detail the important variables
