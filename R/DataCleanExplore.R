@@ -3,24 +3,38 @@ library(plyr)
 library(dplyr)
 library(ggplot2)
 theme_set(theme_bw())
+library(ggthemes)
 library(scales)
 #random intercept for family
-library(lme4) #may need to fit mixed models
-library(glmnet) #may need to use model selection
+#library(lme4) #may need to fit mixed models
+#library(glmnet) #may need to use model selection
 library(smbinning)
+library(stringr)
 
 wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
              data.table = FALSE)
 
-#convert doc2004 and doc2011 to binary
+#create variables
+
+#convert doc2004, doc2011, hac2004, hac2011 to binary
 
 wls$doc2004_bin <- ifelse(wls$doc2004 == 'Yes', 1, 0)
 wls$doc2011_bin <- ifelse(wls$doc2011 == 'Yes', 1, 0)
+
+wls$hac2004_bin <- ifelse(wls$HAC2004 == 'Yes', 1, 0)
+wls$hac2011_bin <- ifelse(wls$HAC2011 == 'Yes', 1, 0)
 
 #look at age a bit more closely
 
 wls$age_2004 <- 2004 - wls$birthyr
 wls$age_2011 <- 2011 - wls$birthyr
+
+#create relative heart attack variable
+wls$HArel2004 <- ifelse(wls$HArelless552004 == 'Yes' | wls$HArelmore552004 == 'Yes', 1, 0)
+#create relative stroke variable
+wls$strokefam2004 <- ifelse(wls$strokefamless652004 == 'Yes' |
+                            wls$strokefammore652004 == 'Yes',
+                            1, 0)
 
 #170 with doc2004 = 1 but doc2011 = 0??
 table(wls$doc2004_bin, wls$doc2011_bin, useNA = 'always',
@@ -280,6 +294,15 @@ table_chisq_doc11 <- data.frame(variable = names_wls_93_04_11,
                                 chisq = 0, stringsAsFactors = FALSE)
 
 
+table_chisq_hac04 <- data.frame(variable = names_wls_93_04,
+                                chisq = 0, stringsAsFactors = FALSE)
+
+table_chisq_hac11 <- data.frame(variable = names_wls_93_04_11,
+                                chisq = 0, stringsAsFactors = FALSE)
+
+#extract chi squared for doc2004 and doc2011
+
+#for loop for doc2004
 for(i in 1:nrow(table_chisq_doc04)){
     
     table_chisq_doc04[i,2] =
@@ -292,11 +315,14 @@ for(i in 1:nrow(table_chisq_doc04)){
         )$statistic
     
 }
-
+#filter data frame
+#select top 30
 table_chisq_doc04 %>%
-    filter(variable != 'doc2004_bin') %>%
+    filter(! variable %in% c('doc2004_bin', 'hac2004_bin')) %>%
     arrange(desc(chisq)) %>%
-    head(., 20) -> doc04_top20
+    head(., 30) -> doc04_top30
+
+#for loop for doc2011
 
 for(i in 1:nrow(table_chisq_doc11)){
     
@@ -311,23 +337,258 @@ for(i in 1:nrow(table_chisq_doc11)){
     
 }
 
+#filter data frame
+#select top 30
 table_chisq_doc11 %>%
-    filter(! variable %in% c('doc2004_bin','doc2011_bin')) %>%
+    filter(! variable %in% c('doc2004_bin', 'hac2004_bin',
+                             'doc2011_bin', 'hac2011_bin')) %>%
     arrange(desc(chisq)) %>%
-    head(., 20) -> doc11_top20
+    head(., 30) -> doc11_top30
 
-
-top_variables <- sort(table(c(doc04_top20$variable, doc11_top20$variable)),
+#frequently occuring top variables
+top_variables_doc <- sort(table(c(doc04_top20$variable, doc11_top20$variable)),
      decreasing = TRUE) %>% 
     stack %>%
     .[,c(2,1)]
 
+#for loop for hac2004
+
+for(i in 1:nrow(table_chisq_hac04)){
+    
+    table_chisq_hac04[i,2] =
+        chisq.test(
+            table(
+                data.frame(wls['hac2004_bin'],
+                           wls[table_chisq_hac04[i,1]]
+                )
+            )
+        )$statistic
+    
+}
+#filter data frame
+#select top 30
+table_chisq_hac04 %>%
+    filter(! variable %in% c('doc2004_bin', 'hac2004_bin')) %>%
+    arrange(desc(chisq)) %>%
+    head(., 30) -> hac04_top30
+
+#for loop for hac2011_bin
+
+for(i in 1:nrow(table_chisq_hac11)){
+    
+    table_chisq_hac11[i,2] =
+        chisq.test(
+            table(
+                data.frame(wls['hac2011_bin'],
+                           wls[table_chisq_hac11[i,1]]
+                )
+            )
+        )$statistic
+    
+}
+
+table_chisq_hac11 %>%
+    filter(! variable %in% c('doc2004_bin', 'hac2004_bin',
+                             'doc2011_bin', 'hac2011_bin')) %>%
+    arrange(desc(chisq)) %>%
+    head(., 30) -> hac11_top30
+
+
+top_variables_hac <- sort(table(c(hac04_top30$variable, hac11_top30$variable)),
+                          decreasing = TRUE) %>% 
+    stack %>%
+    .[,c(2,1)]
+
+top_variables_doc_hac <- 
+    sort(
+        table(
+            c(hac04_top30$variable,
+              hac11_top30$variable,
+              doc04_top30$variable,
+              doc11_top30$variable)
+        ), decreasing = TRUE
+    ) %>% stack %>% .[,c(2,1)]
+
+
+#create a table of the top 10 variables for each variable
+
+df1 <- cbind(
+    doc04_top30[1:10, 1],
+    doc11_top30[1:10, 1],
+    hac04_top30[1:10, 1],
+    hac11_top30[1:10, 1]
+    
+)
+
+colnames(df1) <-  c('DOC_04','DOC_11','HAC_04','HAC_11')
+
+#ten variables in top 30 for each response
+top_variables_doc_hac[1:10,]
+
 #age, weight, smoking, health conditions
+
+
+glm1 <- glm(doc2004_bin ~ highchol2004 + highbp2004 +
+        age_2004 + BMI1993  + smokpkdayX2004 + 
+        diabetes1993, data = wls,
+    family = 'binomial')
 
 #there are some variables we can recode
 #smokyrsX2004 - code everything over 40 (35?) to 40
 
-
 ggplot(wls, aes(x = BMI2004, y = doc2004_bin, colour = factor(highchol2004)))+
     stat_summary(fun.y = 'mean', geom = 'point')+
     stat_smooth(method = 'lm',se = F)
+
+
+
+create_four_plots <- function(variable, group = TRUE, size = 2, pch = 1){
+    
+    
+    xvar <- c(wls[variable])
+    groups <- wls$Rtype
+    doc2004 <- wls$doc2004_bin
+    doc2011 <- wls$doc2011_bin
+    hac2004 <- wls$hac2004_bin
+    hac2011 <- wls$hac2011_bin
+    
+    df_doc04 <- data.frame(x = xvar,
+                           groups = groups,
+                           y = doc2004,
+                           Measure = 'DOC 2004', 
+                           stringsAsFactors = FALSE)
+    
+    df_doc11 <- data.frame(x = xvar,
+                           groups = groups,
+                           y = doc2011,
+                           Measure = 'DOC 2011', 
+                           stringsAsFactors = FALSE)
+    
+    df_hac04 <- data.frame(x = xvar,
+                           groups = groups,
+                           y = hac2004,
+                           Measure = 'HAC 2004', 
+                           stringsAsFactors = FALSE)
+    
+    df_hac11 <- data.frame(x = xvar,
+                           groups = groups,
+                           y = hac2011,
+                           Measure = 'HAC 2011', 
+                           stringsAsFactors = FALSE)
+    
+    
+    df_full <- bind_rows(df_doc04,
+                         df_hac04,
+                         df_doc11,
+                         df_hac11)
+    names(df_full)[1] = 'x'
+    
+    if(group){
+        ggplot(df_full, aes(x = x, y = y, colour = groups))+
+            stat_summary(fun.y = 'mean', geom = 'point', pch = pch,
+                         size = size)+
+            facet_wrap(~Measure, ncol = 2)
+    }else{
+    ggplot(df_full, aes(x = x, y = y))+
+        stat_summary(fun.y = 'mean', geom = 'point', pch = pch,
+                     size = size)+
+        facet_wrap(~Measure, ncol = 2)
+    }
+}
+
+p1 <- create_four_plots(variable = 'smokyrsX2004')
+p1$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
+               p1$layers)
+
+p1 + xlab('Number of Years Respondent has Smoked (2004)')+
+    ylab('Proportion of Respondents with Event') +
+    scale_colour_colorblind(name = 'Group Type',
+                            labels = c('Graduate','Sibling'))+
+    scale_linetype_stata(name = 'Group Type',
+                         labels = c('Graduate', 'Sibling'))+
+    coord_cartesian(ylim = c(0, .6)) + #adjust axis
+    theme(legend.position = 'top',
+          legend.margin = unit(.1, 'lines'),
+          panel.margin = unit(0, 'lines'),
+          strip.text = element_text(face = 'bold', size = 16),
+          strip.background = element_rect(fill = 'white'),
+          axis.title = element_text(size = 16),
+          legend.title = element_text(size = 16),
+          axis.text = element_text(size = 14),
+          legend.text = element_text(size = 14),
+          panel.grid.minor = element_blank()
+          ) -> p1_final
+
+p2 <- create_four_plots(variable = 'BMI1993')
+
+p2$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
+               p2$layers)
+
+p2 + xlab('BMI (as calculated in 1993)')+
+    ylab('Proportion of Respondents with Event') +
+    scale_colour_colorblind(name = 'Group Type',
+                            labels = c('Graduate','Sibling'))+
+    scale_linetype_stata(name = 'Group Type',
+                         labels = c('Graduate', 'Sibling'))+
+   # coord_cartesian(ylim = c(0, .6)) + #adjust axis
+    theme(legend.position = 'top',
+          legend.margin = unit(.1, 'lines'),
+          panel.margin = unit(0, 'lines'),
+          strip.text = element_text(face = 'bold', size = 16),
+          strip.background = element_rect(fill = 'white'),
+          axis.title = element_text(size = 16),
+          legend.title = element_text(size = 16),
+          axis.text = element_text(size = 14),
+          legend.text = element_text(size = 14),
+          panel.grid.minor = element_blank()
+    ) -> p2_final
+
+
+p3 <- create_four_plots(variable = 'age_2004')
+
+p3$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
+               p3$layers)
+
+p3 +xlab('Age (as calculated in 2004)')+
+    ylab('Proportion of Respondents with Event') +
+    scale_colour_colorblind(name = 'Group Type',
+                            labels = c('Graduate','Sibling'))+
+    scale_linetype_stata(name = 'Group Type',
+                         labels = c('Graduate', 'Sibling'))+
+    # coord_cartesian(ylim = c(0, .6)) + #adjust axis
+    theme(legend.position = 'top',
+          legend.margin = unit(.1, 'lines'),
+          panel.margin = unit(0, 'lines'),
+          strip.text = element_text(face = 'bold', size = 16),
+          strip.background = element_rect(fill = 'white'),
+          axis.title = element_text(size = 16),
+          legend.title = element_text(size = 16),
+          axis.text = element_text(size = 14),
+          legend.text = element_text(size = 14),
+          panel.grid.minor = element_blank()
+    ) -> p3_final
+
+#signal not as strong for this one
+
+p4 <- create_four_plots(variable = 'smokpkdayX2004')
+p4$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
+               p4$layers)
+
+p4 + xlab('Number of Packs per Day (2004)')+
+    ylab('Proportion of Respondents with Event') +
+    scale_colour_colorblind(name = 'Group Type',
+                            labels = c('Graduate','Sibling'))+
+    scale_linetype_stata(name = 'Group Type',
+                         labels = c('Graduate', 'Sibling'))+
+    coord_cartesian(ylim = c(0, .6)) + #adjust axis
+    theme(legend.position = 'top',
+          legend.margin = unit(.1, 'lines'),
+          panel.margin = unit(0, 'lines'),
+          strip.text = element_text(face = 'bold', size = 16),
+          strip.background = element_rect(fill = 'white'),
+          axis.title = element_text(size = 16),
+          legend.title = element_text(size = 16),
+          axis.text = element_text(size = 14),
+          legend.text = element_text(size = 14),
+          panel.grid.minor = element_blank()
+    ) -> p4_final
