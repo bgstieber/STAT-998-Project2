@@ -17,6 +17,8 @@ like:
     
 etc.
 
+Can use AUC to evaluate our model.
+
 I think a nice way to estimate how important the variables are would be to calculate the
 misclassification rate when a certain variable is exclude from the model
 like:
@@ -31,6 +33,19 @@ from a model excluding variable j fit on 1000 bootstrapped samples.
 
 
 For presentation, we can create a few things:
+
+Summary statistics:
+for a few basic variables do some summary tests, like t-tests comparing 
+doc2004_bin = 0 to doc2004_bin = 1
+
+for continuous:
+
+for about 10 variables have a table that has
+variable name | mean (sd) group 0 | mean (sd) group 1 | t-stat | p-value |
+
+for binary:
+variable name | proportion of events for group 0 | proportion of events for group 1 | chisquared | p-value |
+
 
 Four column, ten row table: each column is a response variable, the variables
 represent the top 10 highest chi-squared statistic values. Then we order them so that
