@@ -1,3 +1,5 @@
+(1) What covariates or categories of covariates are you most interested in?
+
 --response variable clarification
 
 (1) Four response variables are listed, but it seems like we actually might be most interested in the
@@ -9,8 +11,7 @@ but is it still okay to use the 2004 variables?
 
 --summary indicies
 
-(4) Some of the indices seem to be on different scales. Is there a technique that's normally used so 
-that we could tranform the indices so they're all on the same, meaningful scale?
+(4) Some of the indices seem to be on different scales. Is there a technique that's normally used so that we could tranform the indices so they're all on the same, meaningful scale?
     - Why are there so many missing values?!
 
 (5) Follow up to indices question: some spread between indicies - are there meaningful
@@ -21,9 +22,7 @@ defined categories?
 
 --recoding questions
 
-(3) A suprising amount of missing data for birthyr for graduates. Can we just impute 1939 for missing
-birth years for graduates?
-
+(3) A suprising amount of missing data for birthyr for graduates (593 ~ 5.75%). Can we just impute 1939 for missing birth years for graduates?
 
 (6) 170 individuals have doc2004 = "Yes", but doc2011 = "No" shouldn't these be recoded?
     - 63 individuals have hac2004 = 'yes' , but hac2011 = 'no'?
