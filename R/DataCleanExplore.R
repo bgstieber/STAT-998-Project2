@@ -43,14 +43,23 @@ miss %>%
 wls$doc2004_bin <- ifelse(wls$doc2004 == 'Yes', 1, 0)
 wls$doc2011_bin <- ifelse(wls$doc2011 == 'Yes', 1, 0)
 
+wls$ha2004_bin <- ifelse(wls$HA2004 == 'Yes', 1, 0)
+wls$ha2011_bin <- ifelse(wls$HA2011 == 'Yes', 1, 0)
+
+
 wls$hac2004_bin <- ifelse(wls$HAC2004 == 'Yes', 1, 0)
 wls$hac2011_bin <- ifelse(wls$HAC2011 == 'Yes', 1, 0)
 
+
+
 #look at age a bit more closely
 
-wls$age_2004 <- 2004 - wls$birthyr
-wls$age_2011 <- 2011 - wls$birthyr
+#fix age
+wls$age_2004 <- 2004 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1938.5, 
+                              wls$birthyr)
 
+wls$age_2011 <- 2011 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1938.5, 
+                              wls$birthyr)
 #create relative heart attack variable
 wls$HArel2004 <- ifelse(wls$HArelless552004 == 'Yes' | wls$HArelmore552004 == 'Yes', 1, 0)
 #create relative stroke variable
@@ -72,8 +81,9 @@ apply(wls[,3:8], 2, function(x) mean(is.na(x)))
 
 #HA2011 and HA2004 exhibit more missingness than
 #HAC2011 and HAC2004
-#should we even use these measures?
+#should we even use these measures? - HAVE TO!
 
+#NO!
 #I would propose just investigating HAC2004, HAC2011, doc2004, and doc2011
 
 #of course, we are interested in historical data
@@ -121,15 +131,15 @@ create_missing_table <- function(x){
     x1
 }
 
-miss_hac2004 <- create_missing_table(wls[!is.na(wls$HAC2004),])
+miss_ha2004 <- create_missing_table(wls[!is.na(wls$HA2004),])
 
-sapply(c(.1, .2, .5), function(x) mean(miss_hac2004$values <= x))
+sapply(c(.1, .2, .5), function(x) mean(miss_ha2004$values <= x))
 
 #[1] 0.06730769 0.32692308 0.73717949
 
 #look at missingness by year
 do.call('rbind',
-by(miss_hac2004, miss_hac2004$year, 
+by(miss_ha2004, miss_ha2004$year, 
    function(x)
        sapply(c(.1,.2,.5), function(y) mean(x$values <= y)))
 )
@@ -140,14 +150,14 @@ by(miss_hac2004, miss_hac2004$year,
 # 2011      0.00000000 0.0000000 0.7614679
 # other     0.66666667 0.6666667 0.8888889
 
-miss_hac2011 <- create_missing_table(wls[!is.na(wls$HAC2011),])
+miss_ha2011 <- create_missing_table(wls[!is.na(wls$HA2011),])
 
-sapply(c(.1, .2, .5), function(x) mean(miss_hac2011$values <= x))
+sapply(c(.1, .2, .5), function(x) mean(miss_ha2011$values <= x))
 
 #[1] 0.1057692 0.5641026 0.7564103
 
 do.call('rbind',
-        by(miss_hac2011, miss_hac2011$year, 
+        by(miss_ha2011, miss_ha2011$year, 
            function(x)
                sapply(c(.1,.2,.5), function(y) mean(x$values <= y)))
 )
@@ -316,10 +326,10 @@ table_chisq_doc11 <- data.frame(variable = names_wls_93_04_11,
                                 chisq = 0, stringsAsFactors = FALSE)
 
 
-table_chisq_hac04 <- data.frame(variable = names_wls_93_04,
+table_chisq_ha04 <- data.frame(variable = names_wls_93_04,
                                 chisq = 0, stringsAsFactors = FALSE)
 
-table_chisq_hac11 <- data.frame(variable = names_wls_93_04_11,
+table_chisq_ha11 <- data.frame(variable = names_wls_93_04_11,
                                 chisq = 0, stringsAsFactors = FALSE)
 
 #extract chi squared for doc2004 and doc2011
@@ -340,7 +350,7 @@ for(i in 1:nrow(table_chisq_doc04)){
 #filter data frame
 #select top 30
 table_chisq_doc04 %>%
-    filter(! variable %in% c('doc2004_bin', 'hac2004_bin')) %>%
+    filter(! variable %in% c('doc2004_bin', 'hac2004_bin', 'ha2004_bin')) %>%
     arrange(desc(chisq)) %>%
     head(., 30) -> doc04_top30
 
@@ -362,26 +372,26 @@ for(i in 1:nrow(table_chisq_doc11)){
 #filter data frame
 #select top 30
 table_chisq_doc11 %>%
-    filter(! variable %in% c('doc2004_bin', 'hac2004_bin',
-                             'doc2011_bin', 'hac2011_bin')) %>%
+    filter(! variable %in% c('doc2004_bin', 'hac2004_bin', 'ha2004_bin',
+                             'doc2011_bin', 'hac2011_bin', 'ha2011_bin')) %>%
     arrange(desc(chisq)) %>%
     head(., 30) -> doc11_top30
 
 #frequently occuring top variables
-top_variables_doc <- sort(table(c(doc04_top20$variable, doc11_top20$variable)),
+top_variables_doc <- sort(table(c(doc04_top30$variable, doc11_top30$variable)),
      decreasing = TRUE) %>% 
     stack %>%
     .[,c(2,1)]
 
 #for loop for hac2004
 
-for(i in 1:nrow(table_chisq_hac04)){
+for(i in 1:nrow(table_chisq_ha04)){
     
-    table_chisq_hac04[i,2] =
+    table_chisq_ha04[i,2] =
         chisq.test(
             table(
-                data.frame(wls['hac2004_bin'],
-                           wls[table_chisq_hac04[i,1]]
+                data.frame(wls['ha2004_bin'],
+                           wls[table_chisq_ha04[i,1]]
                 )
             )
         )$statistic
@@ -389,43 +399,43 @@ for(i in 1:nrow(table_chisq_hac04)){
 }
 #filter data frame
 #select top 30
-table_chisq_hac04 %>%
-    filter(! variable %in% c('doc2004_bin', 'hac2004_bin')) %>%
+table_chisq_ha04 %>%
+    filter(! variable %in% c('doc2004_bin', 'hac2004_bin', 'ha2004_bin')) %>%
     arrange(desc(chisq)) %>%
-    head(., 30) -> hac04_top30
+    head(., 30) -> ha04_top30
 
 #for loop for hac2011_bin
 
-for(i in 1:nrow(table_chisq_hac11)){
+for(i in 1:nrow(table_chisq_ha11)){
     
-    table_chisq_hac11[i,2] =
+    table_chisq_ha11[i,2] =
         chisq.test(
             table(
                 data.frame(wls['hac2011_bin'],
-                           wls[table_chisq_hac11[i,1]]
+                           wls[table_chisq_ha11[i,1]]
                 )
             )
         )$statistic
     
 }
 
-table_chisq_hac11 %>%
-    filter(! variable %in% c('doc2004_bin', 'hac2004_bin',
-                             'doc2011_bin', 'hac2011_bin')) %>%
+table_chisq_ha11 %>%
+    filter(! variable %in% c('doc2004_bin', 'hac2004_bin', 'ha2004_bin',
+                             'doc2011_bin', 'hac2011_bin', 'ha2011_bin')) %>%
     arrange(desc(chisq)) %>%
-    head(., 30) -> hac11_top30
+    head(., 30) -> ha11_top30
 
 
-top_variables_hac <- sort(table(c(hac04_top30$variable, hac11_top30$variable)),
+top_variables_ha <- sort(table(c(ha04_top30$variable, ha11_top30$variable)),
                           decreasing = TRUE) %>% 
     stack %>%
     .[,c(2,1)]
 
-top_variables_doc_hac <- 
+top_variables_doc_ha <- 
     sort(
         table(
-            c(hac04_top30$variable,
-              hac11_top30$variable,
+            c(ha04_top30$variable,
+              ha11_top30$variable,
               doc04_top30$variable,
               doc11_top30$variable)
         ), decreasing = TRUE
@@ -437,15 +447,15 @@ top_variables_doc_hac <-
 df1 <- cbind(
     doc04_top30[1:10, 1],
     doc11_top30[1:10, 1],
-    hac04_top30[1:10, 1],
-    hac11_top30[1:10, 1]
+    ha04_top30[1:10, 1],
+    ha11_top30[1:10, 1]
     
 )
 
-colnames(df1) <-  c('DOC_04','DOC_11','HAC_04','HAC_11')
+colnames(df1) <-  c('DOC_04','DOC_11','HA_04','HA_11')
 
 #ten variables in top 30 for each response
-top_variables_doc_hac[1:10,]
+top_variables_doc_ha[1:10,]
 
 #age, weight, smoking, health conditions
 
@@ -471,8 +481,8 @@ create_four_plots <- function(variable, group = TRUE, size = 2, pch = 1){
     groups <- wls$Rtype
     doc2004 <- wls$doc2004_bin
     doc2011 <- wls$doc2011_bin
-    hac2004 <- wls$hac2004_bin
-    hac2011 <- wls$hac2011_bin
+    ha2004 <- wls$ha2004_bin
+    ha2011 <- wls$ha2011_bin
     
     df_doc04 <- data.frame(x = xvar,
                            groups = groups,
@@ -486,23 +496,23 @@ create_four_plots <- function(variable, group = TRUE, size = 2, pch = 1){
                            Measure = 'DOC 2011', 
                            stringsAsFactors = FALSE)
     
-    df_hac04 <- data.frame(x = xvar,
+    df_ha04 <- data.frame(x = xvar,
                            groups = groups,
-                           y = hac2004,
-                           Measure = 'HAC 2004', 
+                           y = ha2004,
+                           Measure = 'HA 2004', 
                            stringsAsFactors = FALSE)
     
-    df_hac11 <- data.frame(x = xvar,
+    df_ha11 <- data.frame(x = xvar,
                            groups = groups,
-                           y = hac2011,
-                           Measure = 'HAC 2011', 
+                           y = ha2011,
+                           Measure = 'HA 2011', 
                            stringsAsFactors = FALSE)
     
     
     df_full <- bind_rows(df_doc04,
-                         df_hac04,
+                         df_ha04,
                          df_doc11,
-                         df_hac11)
+                         df_ha11)
     names(df_full)[1] = 'x'
     
     if(group){

@@ -20,8 +20,8 @@ wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
 wls$doc2004_bin <- ifelse(wls$doc2004 == 'Yes', 1, 0)
 wls$doc2011_bin <- ifelse(wls$doc2011 == 'Yes', 1, 0)
 
-wls$hac2004_bin <- ifelse(wls$HAC2004 == 'Yes', 1, 0)
-wls$hac2011_bin <- ifelse(wls$HAC2011 == 'Yes', 1, 0)
+# wls$hac2004_bin <- ifelse(wls$HAC2004 == 'Yes', 1, 0)
+# wls$hac2011_bin <- ifelse(wls$HAC2011 == 'Yes', 1, 0)
 
 #look at age a bit more closely
 #fix age
@@ -38,34 +38,34 @@ wls$strokefam2004 <- ifelse(wls$strokefamless652004 == 'Yes' |
                                 wls$strokefammore652004 == 'Yes',
                             1, 0)
 #select non-NA values
-wls_hac04 <- wls[!is.na(wls$hac2004_bin), ]
+wls_doc04 <- wls[!is.na(wls$doc2004_bin), ]
 
 #select a subset of the variables, since we can't use any values
 #collected in 2011
 
 names_to_remove <- c(
-    names(wls_hac04)[str_detect(names(wls_hac04), '2011')],
+    names(wls_doc04)[str_detect(names(wls_doc04), '2011')],
     'idpub','HA2004','HAC2004','doc2004','birthyr',
-    'doc2004_bin')
+    'hac2004_bin', 'ha2004_bin')
 
-names_hac04 <- names(wls_hac04)[! names(wls_hac04) %in% names_to_remove]
+names_doc04 <- names(wls_doc04)[! names(wls_doc04) %in% names_to_remove]
 
-wls_hac04 <- wls_hac04[names_hac04]
+wls_doc04 <- wls_doc04[names_doc04]
 
-miss_values <- stack(apply(wls_hac04, 2, function(x) mean(is.na(x))),
+miss_values <- stack(apply(wls_doc04, 2, function(x) mean(is.na(x))),
                      stringsAsFactors = FALSE) 
 
 final_names <- as.character(miss_values[miss_values$values <= 0.175, 2])
 
-wls_hac04 <- wls_hac04[final_names]
+wls_doc04 <- wls_doc04[final_names]
 
-wls_hac04_complete <- wls_hac04[complete.cases(wls_hac04), ]
+wls_doc04_complete <- wls_doc04[complete.cases(wls_doc04), ]
 
 #use randomForest
 
-y = as.factor(wls_hac04_complete$hac2004_bin)
+y = as.factor(wls_doc04_complete$doc2004_bin)
 
-X = select(wls_hac04_complete, - hac2004_bin)
+X = select(wls_doc04_complete, - doc2004_bin)
 
 X_modelmat <- model.matrix(~ -1 + ., data = X)
 

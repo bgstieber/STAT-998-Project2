@@ -44,12 +44,12 @@ wls$strokefam2004 <- ifelse(wls$strokefamless652004 == 'Yes' |
 create_four_plots <- function(variable, group = TRUE, size = 2, pch = 1){
     
     
-    xvar <- c(wls[variable])
+    xvar <- wls[variable]
     groups <- wls$Rtype
     doc2004 <- wls$doc2004_bin
     doc2011 <- wls$doc2011_bin
-    hac2004 <- wls$ha2004_bin
-    hac2011 <- wls$ha2011_bin
+    ha2004 <- wls$ha2004_bin
+    ha2011 <- wls$ha2011_bin
     
     df_doc04 <- data.frame(x = xvar,
                            groups = groups,
@@ -63,23 +63,23 @@ create_four_plots <- function(variable, group = TRUE, size = 2, pch = 1){
                            Measure = 'DOC 2011', 
                            stringsAsFactors = FALSE)
     
-    df_hac04 <- data.frame(x = xvar,
+    df_ha04 <- data.frame(x = xvar,
                            groups = groups,
-                           y = hac2004,
+                           y = ha2004,
                            Measure = 'HA 2004', 
                            stringsAsFactors = FALSE)
     
-    df_hac11 <- data.frame(x = xvar,
+    df_ha11 <- data.frame(x = xvar,
                            groups = groups,
-                           y = hac2011,
+                           y = ha2011,
                            Measure = 'HA 2011', 
                            stringsAsFactors = FALSE)
     
     
     df_full <- bind_rows(df_doc04,
-                         df_hac04,
+                         df_ha04,
                          df_doc11,
-                         df_hac11)
+                         df_ha11)
     names(df_full)[1] = 'x'
     
     if(group){
@@ -225,9 +225,9 @@ p_a + xlab('# of Days Participant Drank Alcohol Last Month (2004)')+
 #     
 #     I would propose the following variables:
 #     
-#     mosteverweigh2004, BMI2004, smokyrsX2004,
+# mosteverweigh2004, BMI2004, smokyrsX2004,
 # ltactaloneothers2004, sumdepressionindex2004,
-# IQ, watchtvhrs2004, agreeableness2004,
+# extraversion2004, watchtvhrs2004, sumanxietyindex2004,
 # alcoholdays2004 (curious result for alcoholdays)
 # 
 # A few four panel plots which detail the important variables
@@ -235,24 +235,24 @@ p_a + xlab('# of Days Participant Drank Alcohol Last Month (2004)')+
 # 
 
 
-aggregate(mosteverweigh2004 ~ hac2004_bin, data = wls,
+aggregate(mosteverweigh2004 ~ ha2004_bin, data = wls,
           function(x) c('mean' = mean(x, na.rm = T), 
                         'sd' = sd(x, na.rm = T)))
 
 # we should actually extract the F statistic coming from a model adjusted
 # for age, rtype, and sex
 
-anova(lm(mosteverweigh2004 ~ age_2004 + sex + Rtype + hac2004_bin, data = wls))
+anova(lm(mosteverweigh2004 ~ age_2004 + sex + Rtype + ha2004_bin, data = wls))
 
 
 form_summary <- character(1)
-right_side_summary <- ' ~ hac2004_bin'
+right_side_summary <- ' ~ doc2004_bin'
 form_anova <- character(1)
-right_side_anova <- ' ~ age_2004 + sex + Rtype + hac2004_bin'
+right_side_anova <- ' ~ age_2004 + sex + Rtype + doc2004_bin'
 
 names_to_analyze <- c('mosteverweigh2004','BMI2004','smokyrsX2004',
                       'ltactaloneothers2004','sumdepressionindex2004',
-                      'IQ','waatchtvhrs2004','agreeableness2004',
+                      'extraversion2004','watchtvhrs2004','sumanxietyindex2004',
                       'alcoholdays2004')
 
 agg_value <- NULL
@@ -261,8 +261,9 @@ anova_value <- NULL
 summary_df <- data.frame('Variable' = character(0),
                          'Mean(sd)0' = character(0),
                          'Mean(sd)1' = character(0),
-                         'Fstat' = character(0),
-                         'pvalue' = character(0)
+                         'Fstat' = numeric(0),
+                         'pvalue' = numeric(0),
+                         stringsAsFactors = FALSE
                          )
 
 for(i in 1:length(names_to_analyze)){
@@ -292,23 +293,14 @@ for(i in 1:length(names_to_analyze)){
                                  round(agg_value[2,2][2], 1), ')'),
             
             'Fstat' = round(anova_value[4,4], 1),
-            'pvalue' = round(anova_value[4,5], 1)
+            'pvalue' = round(anova_value[4,5], 3)
             
         )
-    
+    summary_df[i,] = final_vec
     
     
     
 }
-
-
-
-
-
-
-
-
-
 
 
 # for binary:
