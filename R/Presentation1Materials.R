@@ -139,7 +139,7 @@ p2 + xlab('BMI (as calculated in 2004)')+
                          labels = c('Graduate', 'Sibling'))+
     scale_shape_cleveland(name = 'Group Type',
                           labels = c('Graduate', 'Sibling'))+
-    # coord_cartesian(ylim = c(0, .6)) + #adjust axis
+    coord_cartesian(ylim = c(0, .75)) + #adjust axis
     theme(legend.position = 'top',
           legend.margin = unit(.1, 'lines'),
           panel.margin = unit(0, 'lines'),
@@ -155,6 +155,9 @@ p2 + xlab('BMI (as calculated in 2004)')+
 
 
 ##use in presentation
+wls$sumdepressionindex2004_plusone <- wls$sumdepressionindex2004 + 1
+wls$log_sumdepressionindex2004_plusone <- log(wls$sumdepressionindex2004_plusone)
+
 
 p_d <- create_four_plots(variable = 'sumdepressionindex2004')
 
@@ -199,7 +202,7 @@ p_a + xlab('# of Days Participant Drank Alcohol Last Month (2004)')+
                          labels = c('Graduate', 'Sibling'))+
     scale_shape_cleveland(name = 'Group Type',
                           labels = c('Graduate', 'Sibling'))+
-    # coord_cartesian(ylim = c(0, .6)) + #adjust axis
+    coord_cartesian(ylim = c(0, .75)) + #adjust axis
     theme(legend.position = 'top',
           legend.margin = unit(.1, 'lines'),
           panel.margin = unit(0, 'lines'),
