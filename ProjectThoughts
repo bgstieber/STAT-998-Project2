@@ -32,7 +32,7 @@ where we calculate misclassification rate using the average misclassification ra
 from a model excluding variable j fit on 1000 bootstrapped samples.
 
 
-For presentation, we can create a few things:
+For presentation 1, we can create a few things:
 
 Summary statistics:
 for a few basic variables do some summary tests, like t-tests comparing 
@@ -40,18 +40,33 @@ doc2004_bin = 0 to doc2004_bin = 1
 
 for continuous:
 
-for about 10 variables have a table that has
+for about 10 (ish) variables have a table that has
 variable name | mean (sd) group 0 | mean (sd) group 1 | t-stat | p-value |
+
+I would propose the following variables:
+
+mosteverweigh2004, BMI2004, smokyrsX2004,
+ltactaloneothers2004, sumdepressionindex2004,
+IQ, watchtvhrs2004, agreeableness2004,
+alcoholdays2004 (curious result for alcoholdays)
+
+A few four panel plots which detail the important variables
+sumdepressionindex2004, BMI2004, smokyrsX2004, alcoholdays2004 (signal not as strong)
 
 for binary:
 variable name | proportion of events for group 0 | proportion of events for group 1 | chisquared | p-value |
 
+I propose the following variables:
+sex, diabetes2004, stroke2004, 
+highchol2004, smokeever2004, HArelless552004,
+strokefamless652004, highbp2004, servedwar2004
+
+
+
+-- NO! - Don't do the following --
 
 Four column, ten row table: each column is a response variable, the variables
 represent the top 10 highest chi-squared statistic values. Then we order them so that
 it makes sense. (already completed in excel)
 
 Also list the ten variables that were in the top 30 for each variable 
-
-
-A few four panel plots which detail the important variables

@@ -24,9 +24,12 @@ wls$hac2004_bin <- ifelse(wls$HAC2004 == 'Yes', 1, 0)
 wls$hac2011_bin <- ifelse(wls$HAC2011 == 'Yes', 1, 0)
 
 #look at age a bit more closely
+#fix age
+wls$age_2004 <- 2004 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1957 - 18, 
+                              wls$birthyr)
 
-wls$age_2004 <- 2004 - wls$birthyr
-wls$age_2011 <- 2011 - wls$birthyr
+wls$age_2011 <- 2011 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1957 - 18, 
+                              wls$birthyr)
 
 #create relative heart attack variable
 wls$HArel2004 <- ifelse(wls$HArelless552004 == 'Yes' | wls$HArelmore552004 == 'Yes', 1, 0)
@@ -42,7 +45,7 @@ wls_hac04 <- wls[!is.na(wls$hac2004_bin), ]
 
 names_to_remove <- c(
     names(wls_hac04)[str_detect(names(wls_hac04), '2011')],
-    'idpub','Rtype','HA2004','HAC2004','doc2004','birthyr',
+    'idpub','HA2004','HAC2004','doc2004','birthyr',
     'doc2004_bin')
 
 names_hac04 <- names(wls_hac04)[! names(wls_hac04) %in% names_to_remove]
@@ -71,7 +74,6 @@ tune.rf = tuneRF(x = X_modelmat, y = y, ntree=1000, mtryStart=10, stepFactor=1, 
 ## Fit the model
 fit.rf  = randomForest(x = X_modelmat, y = y, 
                        ntree=1000, mtry=10, nodesize=10, importance=T)
-
 
 ## Get the variable importance score
 varimp = varImpPlot(fit.rf)

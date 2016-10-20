@@ -14,6 +14,28 @@ library(stringr)
 wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
              data.table = FALSE)
 
+miss <- stack(apply(wls, 2, function(x) mean(is.na(x))),
+              stringsAsFactors = FALSE)
+
+miss$ind <- as.character(miss$ind)
+
+miss$year <- substr(miss$ind, start = nchar(miss$ind) - 3, 
+                    stop = nchar(miss$ind))
+
+miss$year <- ifelse(! miss$year %in% c('1993','2004','2011'), 
+                    'other', miss$year)
+
+miss <- miss %>% arrange(-values)
+
+miss$ind <- factor(miss$ind, levels = miss$ind)
+
+miss %>%
+    group_by(year) %>%
+    summarise(MissingPercent_1Q = quantile(values, .25),
+              MissingPercent_Median = quantile(values, .5),
+              MissingPercent_3Q = quantile(values, .75),
+              AvgMissingPercent = mean(values),
+              NumberOfVariables = n()) -> miss_2
 #create variables
 
 #convert doc2004, doc2011, hac2004, hac2011 to binary
@@ -484,8 +506,8 @@ create_four_plots <- function(variable, group = TRUE, size = 2, pch = 1){
     names(df_full)[1] = 'x'
     
     if(group){
-        ggplot(df_full, aes(x = x, y = y, colour = groups))+
-            stat_summary(fun.y = 'mean', geom = 'point', pch = pch,
+        ggplot(df_full, aes(x = x, y = y, colour = groups, shape = groups))+
+            stat_summary(fun.y = 'mean', geom = 'point',
                          size = size)+
             facet_wrap(~Measure, ncol = 2)
     }else{
@@ -496,16 +518,21 @@ create_four_plots <- function(variable, group = TRUE, size = 2, pch = 1){
     }
 }
 
+##use in presentation
+
 p1 <- create_four_plots(variable = 'smokyrsX2004')
 p1$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
                p1$layers)
 
 p1 + xlab('Number of Years Respondent has Smoked (2004)')+
     ylab('Proportion of Respondents with Event') +
-    scale_colour_colorblind(name = 'Group Type',
-                            labels = c('Graduate','Sibling'))+
+    scale_colour_manual(name = 'Group Type',
+                            labels = c('Graduate','Sibling'),
+                        values = c('#2d112b', '#ff7e49'))+
     scale_linetype_stata(name = 'Group Type',
                          labels = c('Graduate', 'Sibling'))+
+    scale_shape_cleveland(name = 'Group Type',
+                          labels = c('Graduate', 'Sibling'))+
     coord_cartesian(ylim = c(0, .6)) + #adjust axis
     theme(legend.position = 'top',
           legend.margin = unit(.1, 'lines'),
@@ -519,17 +546,22 @@ p1 + xlab('Number of Years Respondent has Smoked (2004)')+
           panel.grid.minor = element_blank()
           ) -> p1_final
 
-p2 <- create_four_plots(variable = 'BMI1993')
+##use in presentation
+
+p2 <- create_four_plots(variable = 'BMI2004')
 
 p2$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
                p2$layers)
 
-p2 + xlab('BMI (as calculated in 1993)')+
+p2 + xlab('BMI (as calculated in 2004)')+
     ylab('Proportion of Respondents with Event') +
-    scale_colour_colorblind(name = 'Group Type',
-                            labels = c('Graduate','Sibling'))+
+    scale_colour_manual(name = 'Group Type',
+                        labels = c('Graduate','Sibling'),
+                        values = c('#2d112b', '#ff7e49'))+
     scale_linetype_stata(name = 'Group Type',
                          labels = c('Graduate', 'Sibling'))+
+    scale_shape_cleveland(name = 'Group Type',
+                          labels = c('Graduate', 'Sibling'))+
    # coord_cartesian(ylim = c(0, .6)) + #adjust axis
     theme(legend.position = 'top',
           legend.margin = unit(.1, 'lines'),
@@ -551,10 +583,13 @@ p3$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
 
 p3 +xlab('Age (as calculated in 2004)')+
     ylab('Proportion of Respondents with Event') +
-    scale_colour_colorblind(name = 'Group Type',
-                            labels = c('Graduate','Sibling'))+
+    scale_colour_manual(name = 'Group Type',
+                        labels = c('Graduate','Sibling'),
+                        values = c('#2d112b', '#ff7e49'))+
     scale_linetype_stata(name = 'Group Type',
                          labels = c('Graduate', 'Sibling'))+
+    scale_shape_cleveland(name = 'Group Type',
+                          labels = c('Graduate', 'Sibling'))+
     # coord_cartesian(ylim = c(0, .6)) + #adjust axis
     theme(legend.position = 'top',
           legend.margin = unit(.1, 'lines'),
@@ -576,10 +611,13 @@ p4$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
 
 p4 + xlab('Number of Packs per Day (2004)')+
     ylab('Proportion of Respondents with Event') +
-    scale_colour_colorblind(name = 'Group Type',
-                            labels = c('Graduate','Sibling'))+
+    scale_colour_manual(name = 'Group Type',
+                        labels = c('Graduate','Sibling'),
+                        values = c('#2d112b', '#ff7e49'))+
     scale_linetype_stata(name = 'Group Type',
                          labels = c('Graduate', 'Sibling'))+
+    scale_shape_cleveland(name = 'Group Type',
+                          labels = c('Graduate', 'Sibling'))+
     coord_cartesian(ylim = c(0, .6)) + #adjust axis
     theme(legend.position = 'top',
           legend.margin = unit(.1, 'lines'),
@@ -592,3 +630,91 @@ p4 + xlab('Number of Packs per Day (2004)')+
           legend.text = element_text(size = 14),
           panel.grid.minor = element_blank()
     ) -> p4_final
+
+
+p5 <- create_four_plots(variable = 'ltactaloneothers2004')
+p5$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
+               p5$layers)
+
+p5 + xlab('Hours per Month of Light Phyiscal Activity (2004)')+
+    ylab('Proportion of Respondents with Event') +
+    scale_colour_manual(name = 'Group Type',
+                        labels = c('Graduate','Sibling'),
+                        values = c('#2d112b', '#ff7e49'))+
+    scale_linetype_stata(name = 'Group Type',
+                         labels = c('Graduate', 'Sibling'))+
+    scale_shape_cleveland(name = 'Group Type',
+                          labels = c('Graduate', 'Sibling'))+
+    coord_cartesian(ylim = c(0, .6)) + #adjust axis
+    theme(legend.position = 'top',
+          legend.margin = unit(.1, 'lines'),
+          panel.margin = unit(0, 'lines'),
+          strip.text = element_text(face = 'bold', size = 16),
+          strip.background = element_rect(fill = 'white'),
+          axis.title = element_text(size = 16),
+          legend.title = element_text(size = 16),
+          axis.text = element_text(size = 14),
+          legend.text = element_text(size = 14),
+          panel.grid.minor = element_blank()
+    )
+
+##use in presentation
+
+p_d <- create_four_plots(variable = 'sumdepressionindex2004')
+
+p_d$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
+                p_d$layers)
+
+p_d + xlab('Summary Score for Psychological Distress/Depression (2004)')+
+    ylab('Proportion of Respondents with Event') +
+    scale_colour_manual(name = 'Group Type',
+                        labels = c('Graduate','Sibling'),
+                        values = c('#2d112b', '#ff7e49'))+
+    scale_linetype_stata(name = 'Group Type',
+                         labels = c('Graduate', 'Sibling'))+
+    scale_shape_cleveland(name = 'Group Type',
+                          labels = c('Graduate', 'Sibling'))+
+   # coord_cartesian(ylim = c(0, .6)) + #adjust axis
+    theme(legend.position = 'top',
+          legend.margin = unit(.1, 'lines'),
+          panel.margin = unit(0, 'lines'),
+          strip.text = element_text(face = 'bold', size = 16),
+          strip.background = element_rect(fill = 'white'),
+          axis.title = element_text(size = 16),
+          legend.title = element_text(size = 16),
+          axis.text = element_text(size = 14),
+          legend.text = element_text(size = 14),
+          panel.grid.minor = element_blank()
+    ) -> p_d_final
+
+#use in presentation to note that the signal isn't actually as strong as the others
+
+p_a <- create_four_plots(variable = 'alcoholdays2004')
+
+p_a$layers <- c(stat_smooth(se = F, method = 'lm', aes(linetype = groups)),
+                p_a$layers)
+
+p_a + xlab('# of Days Participant Drank Alcohol Last Month (2004)')+
+    ylab('Proportion of Respondents with Event') +
+    scale_colour_manual(name = 'Group Type',
+                        labels = c('Graduate','Sibling'),
+                        values = c('#2d112b', '#ff7e49'))+
+    scale_linetype_stata(name = 'Group Type',
+                         labels = c('Graduate', 'Sibling'))+
+    scale_shape_cleveland(name = 'Group Type',
+                          labels = c('Graduate', 'Sibling'))+
+    # coord_cartesian(ylim = c(0, .6)) + #adjust axis
+    theme(legend.position = 'top',
+          legend.margin = unit(.1, 'lines'),
+          panel.margin = unit(0, 'lines'),
+          strip.text = element_text(face = 'bold', size = 16),
+          strip.background = element_rect(fill = 'white'),
+          axis.title = element_text(size = 16),
+          legend.title = element_text(size = 16),
+          axis.text = element_text(size = 14),
+          legend.text = element_text(size = 14),
+          panel.grid.minor = element_blank()
+    ) -> p_a_final
+
+
+
