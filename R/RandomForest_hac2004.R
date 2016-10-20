@@ -55,7 +55,7 @@ wls_hac04 <- wls_hac04[names_hac04]
 miss_values <- stack(apply(wls_hac04, 2, function(x) mean(is.na(x))),
                      stringsAsFactors = FALSE) 
 
-final_names <- as.character(miss_values[miss_values$values <= 0.20,2])
+final_names <- as.character(miss_values[miss_values$values <= 0.175, 2])
 
 wls_hac04 <- wls_hac04[final_names]
 
@@ -77,3 +77,4 @@ fit.rf  = randomForest(x = X_modelmat, y = y,
 
 ## Get the variable importance score
 varimp = varImpPlot(fit.rf)
+
