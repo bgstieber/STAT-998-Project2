@@ -311,5 +311,57 @@ for(i in 1:length(names_to_analyze)){
 # highchol2004, smokeever2004, HArelless552004,
 # strokefamless652004, highbp2004, servedwar2004
 
+#convert sex to binary
+
+convert_yes <- function(x) ifelse(x == 'Yes', 1, 0)
+
+wls$sex_binary <- ifelse(wls$sex == 'Male', 0, 1)
+wls$diabetes2004_binary <- convert_yes(wls$diabetes2004)
+wls$stroke2004_binary <- convert_yes(wls$stroke2004)
+wls$highchol2004_binary <- convert_yes(wls$highchol2004)
+wls$smokever2004_binary <- convert_yes(wls$smokever2004)
+wls$HArelless552004_binary <- convert_yes(wls$HArelless552004)
+wls$strokefamless652004_binary <- convert_yes(wls$strokefamless652004)
+wls$highbp2004_binary <- convert_yes(wls$highbp2004)
+wls$servedwar2004 <- convert_yes(wls$servedwar2004)
+
+binary_names <- c("sex_binary", "diabetes2004_binary", "stroke2004_binary",
+                  "highchol2004_binary","smokever2004_binary", "HArelless552004_binary", 
+                  "strokefamless652004_binary", "highbp2004_binary")
+
+agg_value <- NULL
+chisq_test <- NULL
+
+agg_form <- 'doc2004_bin ~ '
+
+summary_df <- data.frame('Variable' = character(0),
+                         'EventRate0' = numeric(0),
+                         'EventRate1' = numeric(0),
+                         'Chisq' = numeric(0),
+                         'pvalue' = numeric(0),
+                         stringsAsFactors = FALSE)
+final_vec <- NULL
+
+for(i in 1:length(binary_names)){
+    
+    
+    agg_value <- aggregate(as.formula(paste0(agg_form, binary_names[i])),
+                           data = wls, mean)
+    
+    chisq_test <- chisq.test(
+        table(wls[c(binary_names[i], 'doc2004_bin')])
+    )
+    
+    final_vec <- c(
+        'Variable' = binary_names[i],
+        'EventRate0' = scales::percent(agg_value[1,2]),
+        'EventRate1' = scales::percent(agg_value[2,2]),
+        'Chisq' = round(chisq_test$statistic,1),
+        'pvalue' = round(chisq_test$p.value, 3)
+    )
+    
+    summary_df[i,] = final_vec
+}
+
 
 
