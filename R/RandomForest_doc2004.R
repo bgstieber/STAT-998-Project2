@@ -69,11 +69,12 @@ X = select(wls_doc04_complete, - doc2004_bin)
 
 X_modelmat <- model.matrix(~ -1 + ., data = X)
 
-tune.rf = tuneRF(x = X_modelmat, y = y, ntree=1000, mtryStart=10, stepFactor=1, nodesize=10)
+tune.rf = tuneRF(x = X_modelmat, y = y, ntree = 600, mtryStart=10, stepFactor=1, 
+                 nodesize = 10)
 
 ## Fit the model
 fit.rf  = randomForest(x = X_modelmat, y = y, 
-                       ntree=1000, mtry=10, nodesize=10, importance=T)
+                       ntree=1500, mtry=10, nodesize=10, importance=T)
 
 ## Get the variable importance score
 varimp = varImpPlot(fit.rf)
