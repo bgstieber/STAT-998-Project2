@@ -47,7 +47,7 @@ wls_ha2004 <- wls[!is.na(wls$ha2004_bin), ]
 
 names_to_remove <- c(
     names(wls_ha2004)[str_detect(names(wls_ha2004), '2011')],
-    'idpub','HA2004','HAC2004','ha2004','birthyr',
+    'HA2004','HAC2004','ha2004','birthyr',
     'doc2004','doc2011',
     'hac2004_bin')
 
@@ -68,7 +68,7 @@ wls_ha2004_complete <- wls_ha2004[complete.cases(wls_ha2004), ]
 
 y = as.factor(wls_ha2004_complete$ha2004_bin)
 
-X = select(wls_ha2004_complete, - ha2004_bin)
+X = select(wls_ha2004_complete, - ha2004_bin, -idpub)
 
 X_modelmat <- model.matrix(~ -1 + ., data = X)
 
@@ -87,17 +87,17 @@ varimp = varImpPlot(fit.rf)
 
 
 #build up a prospective logistic regression
+fit1 <- glm(ha2004_bin ~ sex + age_2004 + Rtype + alcoholdays2004 + highchol2004 + 
+            highbp2004 + stressmakepos2004, 
+            data = wls_ha2004_complete, family = 'binomial')
 
-fit1 <- glm(ha2004_bin ~ sex + age_2004 + Rtype + alcoholdays2004 +
-                highchol2004 + highbp2004 + sumdepressionindex2004 + 
-                sleeprestlessly2004 + sumangerindex2004 + 
-                smokepipe2004 + diabetes2004 + stressconcefforts2004, 
-                data = wls_ha2004_complete
-                )
+gfit1 <- glmer(ha2004_bin ~ sex + age_2004 + Rtype + alcoholdays2004 + highchol2004 + 
+                 highbp2004 + stressmakepos2004 + jailed2004 + (1|idpub), 
+             data = wls_ha2004_complete, family = 'binomial',
+             control = glmerControl(
+                 optimizer = "optimx", calc.derivs = FALSE,
+                 optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)))
 
-fit1.s <- step(fit1, direction = 'both', trace = 0)
-
-summary(fit2 <- update(fit1.s, .~. + Rtype + smokever2004))
 
 miss_class <- function(preds, actual){
     
