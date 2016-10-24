@@ -72,13 +72,13 @@ X = select(wls_ha2004_complete, - ha2004_bin, -idpub)
 
 X_modelmat <- model.matrix(~ -1 + ., data = X)
 
-tune.rf = tuneRF(x = X_modelmat, y = y, ntree=1500, mtryStart = 8, 
+tune.rf = tuneRF(x = X_modelmat, y = y, ntree=1500, mtryStart = 10,
                  stepFactor = 1, nodesize = 5)
 
 ## Fit the model
 fit.rf  = randomForest(x = X_modelmat, y = y, 
                        ntree = 1500, 
-                       mtry= 8, 
+                       mtry= 10, 
                        nodesize = 5, 
                        importance=T)
 
@@ -110,3 +110,55 @@ miss_class <- function(preds, actual){
     )
     
 }
+
+wls_ha2004.full <- wls[!is.na(wls$ha2004_bin),]
+
+
+gfit1.full <- 
+    glmer(ha2004_bin ~ sex + age_2004 + Rtype + THI2004 + BMI2004 + alcoholdays2004 + 
+              highchol2004 + stressmakepos2004 + jailed2004 + 
+              (1|idpub), 
+      data = wls_ha2004.full, family = 'binomial',
+      control = glmerControl(
+          optimizer = "optimx", calc.derivs = FALSE,
+          optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
+      na.action = na.exclude)
+
+#might be final model
+gfit2.full <- 
+    glmer(ha2004_bin ~ sex + age_2004 + Rtype + THI2004  + alcoholdays2004 + 
+              highchol2004 + stressmakepos2004 + jailed2004 + diabetes2004 +
+              smokpkyrs2004 + (1|idpub), 
+          data = wls_ha2004.full, family = 'binomial',
+          control = glmerControl(
+              optimizer = "optimx", calc.derivs = FALSE,
+              optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
+          na.action = na.exclude)
+
+
+#create a mosteverweigh2004 category
+smbinning(df = wls_ha2004.full, y = 'ha2004_bin',
+          x = 'mosteverweigh2004')
+
+wls_ha2004.full$mosteverweigh2004_category <- ifelse(
+    wls_ha2004.full$mosteverweigh2004 > 172, 'High','Low'
+)
+
+#create a BMI category
+
+smbinning(df = wls_ha2004.full, y = 'ha2004_bin',
+          x = 'BMI2004')
+
+wls_ha2004.full$BMI2004_category <- ifelse(
+    wls_ha2004.full$BMI2004 > 26, 'High', 'Low'
+)
+
+
+gfit2.mew <- update(gfit2.full, .~. + mosteverweigh2004_category)
+
+gfit2.bmi <- update(gfit2.full, .~. + BMI2004_category)
+
+gfit2.bmimew <- update(gfit2.full, .~. + mosteverweigh2004_category * BMI2004_category)
+
+
+
