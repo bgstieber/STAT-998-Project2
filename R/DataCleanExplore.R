@@ -64,7 +64,7 @@ wls$age_2011 <- 2011 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1938.5,
 wls$HArel2004 <- ifelse(wls$HArelless552004 == 'Yes' | wls$HArelmore552004 == 'Yes', 1, 0)
 #create relative stroke variable
 wls$strokefam2004 <- ifelse(wls$strokefamless652004 == 'Yes' |
-                            wls$strokefammore652004 == 'Yes',
+                                wls$strokefammore652004 == 'Yes',
                             1, 0)
 
 #170 with doc2004 = 1 but doc2011 = 0??
