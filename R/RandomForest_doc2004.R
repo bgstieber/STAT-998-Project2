@@ -5,10 +5,14 @@ library(ggplot2)
 theme_set(theme_bw())
 library(ggthemes)
 library(scales)
+library(lme4)
+library(optimx)
 #random intercept for family
 library(randomForest)
 library(smbinning)
 library(stringr)
+
+run.rf <- FALSE
 
 wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
              data.table = FALSE)
@@ -69,13 +73,93 @@ X = select(wls_doc04_complete, - doc2004_bin)
 
 X_modelmat <- model.matrix(~ -1 + ., data = X)
 
+if(run.rf){
 tune.rf = tuneRF(x = X_modelmat, y = y, ntree = 600, mtryStart=10, stepFactor=1, 
                  nodesize = 10)
 
 ## Fit the model
+
 fit.rf  = randomForest(x = X_modelmat, y = y, 
-                       ntree=1500, mtry=10, nodesize=10, importance=T)
+                       ntree = 1500, mtry = 10, nodesize=10, importance=T)
 
 ## Get the variable importance score
 varimp = varImpPlot(fit.rf)
+}
 
+fit1 <- glm(doc2004_bin ~ sex +age_2004 + Rtype +THI2004 +
+                highbp2004 + diabetes2004 + 
+                smokpkdayX2004 + highchol2004 +
+                sumdepressionindex2004 + stroke2004 + alcoholdays2004 +
+                troublesleepamt2004, data = wls_doc04_complete, family = 'binomial')
+
+#create new trouble sleep variable
+
+wls_doc04_complete$troublesleepamt2004_binned <- 
+    ifelse(wls_doc04_complete$troublesleepamt2004 %in% c('No','Monthlyorless'),
+           'MonthlyOrLess', wls_doc04_complete$troublesleepamt2004)
+
+fit2 <- glm(doc2004_bin ~ sex +age_2004 + Rtype +THI2004 +
+                highbp2004 + diabetes2004 + 
+                smokpkdayX2004 + highchol2004 +
+                sumdepressionindex2004 + stroke2004 + alcoholdays2004 +
+                troublesleepamt2004_binned, data = wls_doc04_complete, family = 'binomial')
+
+fit3 <- glm(doc2004_bin ~ sex +age_2004 + Rtype +THI2004 +
+                highbp2004 + diabetes2004 + 
+                smokpkdayX2004 + highchol2004 +
+                sumdepressionindex2004 + stroke2004 + alcoholdays2004 +
+                sleeprestlessly2004, data = wls_doc04_complete, family = 'binomial')
+
+wls_doc2004.full <- wls[!is.na(wls$doc2004),]
+
+wls_doc2004.full$troublesleepamt2004_binned <- ifelse(
+    wls_doc2004.full$troublesleepamt2004 == 'No',
+    'Monthlyorless', wls_doc2004.full$troublesleepamt2004
+)
+
+miss_class <- function(preds, actual){
+    
+    t_p_a <- table(preds, actual)
+    
+    list(
+        'Total' = (t_p_a[1,2] + t_p_a[2,1]) / length(actual),
+        'PredNoWasYes' = t_p_a[1,2] / (sum(t_p_a[1,])),
+        'PredYesWasNo' = t_p_a[2,1] / (sum(t_p_a[2,]))
+    )
+    
+}
+
+#has a better misclassification rate than gfit3
+
+gfit2 <- glmer(
+    doc2004_bin ~ sex +age_2004 + Rtype +THI2004 + BMI2004 +
+        highbp2004 + diabetes2004 + 
+        smokpkdayX2004 + highchol2004 +
+        sumdepressionindex2004 + stroke2004 + alcoholdays2004 +
+        troublesleepamt2004_binned + (1|idpub),
+    data = wls_doc2004.full, family = 'binomial',
+    control = glmerControl(
+        optimizer = "optimx", calc.derivs = FALSE,
+        optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
+    na.action = na.exclude
+)
+
+gfit3 <- glmer(
+    doc2004_bin ~ sex +age_2004 + Rtype +THI2004 + BMI2004 +
+        highbp2004 + diabetes2004 + 
+        smokpkdayX2004 + highchol2004 +
+        sumdepressionindex2004 + stroke2004 + alcoholdays2004 +
+        sleeprestlessly2004 + (1|idpub),
+    data = wls_doc2004.full, family = 'binomial',
+    control = glmerControl(
+        optimizer = "optimx", calc.derivs = FALSE,
+        optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
+    na.action = na.exclude
+)
+
+#add some stressful life events
+#none are worth keeping
+gfit2.update <- update(gfit2, .~. + jailed2004 + deepdebt2004 + servedwar2004 + 
+                           parentsdrugs2004 + stressconcefforts2004)
+
+#I think gfit2 is final model for doc2004
