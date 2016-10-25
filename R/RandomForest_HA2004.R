@@ -12,6 +12,8 @@ library(randomForest)
 library(smbinning)
 library(stringr)
 
+run.rf <- FALSE
+
 wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
              data.table = FALSE)
 
@@ -72,8 +74,10 @@ X = select(wls_ha2004_complete, - ha2004_bin, -idpub)
 
 X_modelmat <- model.matrix(~ -1 + ., data = X)
 
+if(run.rf){
 tune.rf = tuneRF(x = X_modelmat, y = y, ntree=1500, mtryStart = 10,
                  stepFactor = 1, nodesize = 5)
+
 
 ## Fit the model
 fit.rf  = randomForest(x = X_modelmat, y = y, 
@@ -84,7 +88,7 @@ fit.rf  = randomForest(x = X_modelmat, y = y,
 
 ## Get the variable importance score
 varimp = varImpPlot(fit.rf)
-
+}
 
 #build up a prospective logistic regression
 fit1 <- glm(ha2004_bin ~ sex + age_2004 + Rtype + alcoholdays2004 + highchol2004 + 
@@ -160,5 +164,7 @@ gfit2.bmi <- update(gfit2.full, .~. + BMI2004_category)
 
 gfit2.bmimew <- update(gfit2.full, .~. + mosteverweigh2004_category * BMI2004_category)
 
+
+ha2004_final <- gfit2.full
 
 
