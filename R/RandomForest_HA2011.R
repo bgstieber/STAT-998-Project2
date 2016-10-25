@@ -12,6 +12,8 @@ library(randomForest)
 library(smbinning)
 library(stringr)
 
+run.rf <- FALSE
+
 wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
              data.table = FALSE)
 
@@ -69,6 +71,20 @@ X = select(wls_ha2011_complete, -ha2011_bin, -idpub)
 
 X_modelmat <- model.matrix(~ -1 + ., data = X)
 
+X_data <- cbind(wls_ha2011_complete$ha2011_bin, X_modelmat)
+
+X_data <- data.frame(X_data)
+
+fit2 = gbm(V1 ~. , data = X_data, n.trees=10000, 
+           distribution='adaboost', interaction.depth = 2, 
+           cv.folds=10)
+fit2$cv.error
+best.iter <- gbm.perf(fit2, method="cv") 
+
+summary(fit2)
+
+if(run.rf){
+
 tune.rf = tuneRF(x = X_modelmat, y = y, ntree=1500, mtryStart = 8, 
                  stepFactor = 1, nodesize = 5)
 
@@ -81,7 +97,7 @@ fit.rf  = randomForest(x = X_modelmat, y = y,
 
 ## Get the variable importance score
 varimp = varImpPlot(fit.rf)
-
+}
 
 #build up a prospective logistic regression
 
