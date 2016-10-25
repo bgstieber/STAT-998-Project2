@@ -1,0 +1,201 @@
+---
+title: "Prospective Models"
+author: "Brad Stieber"
+output: 
+  html_document: 
+    toc_float: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+options(digits = 4)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+This document contains the four models I have fit as a result of the various variable selection methods we've used.
+
+###Read and Transform Data
+
+```{r}
+library(data.table)
+library(lme4)
+library(optimx)
+
+
+wls <- fread("WLS2.csv", data.table = FALSE)
+
+#create variables
+
+#convert doc2004, doc2011, ha2004, ha2011 to binary
+
+wls$doc2004_bin <- ifelse(wls$doc2004 == 'Yes', 1, 0)
+wls$doc2011_bin <- ifelse(wls$doc2011 == 'Yes', 1, 0)
+
+wls$ha2004_bin <- ifelse(wls$HA2004 == 'Yes', 1, 0)
+wls$ha2011_bin <- ifelse(wls$HA2011 == 'Yes', 1, 0)
+
+#look at age a bit more closely
+#fix age
+wls$age_2004 <- 2004 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1938.5, 
+                              wls$birthyr)
+
+wls$age_2011 <- 2011 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1938.5, 
+                              wls$birthyr)
+
+#create relative heart attack variable
+wls$HArel2004 <- ifelse(
+    wls$HArelless552004 == 'Yes' | wls$HArelmore552004 == 'Yes', 1, 0
+    )
+#create relative stroke variable
+wls$strokefam2004 <- ifelse(
+    wls$strokefamless652004 == 'Yes' | wls$strokefammore652004 == 'Yes', 1, 0
+    )
+
+#bin troublesleepamt2004
+wls$troublesleep04_bin <- 
+    ifelse(wls$troublesleepamt2004 == 'No',
+           'Monthlyorless', wls$troublesleepamt2004)
+
+table(wls$troublesleepamt2004, wls$troublesleep04_bin)
+
+#create overweight variable
+wls$overweight2004 <- ifelse(wls$rightweight2004 == 'Overweight','Yes','No')
+table(wls$overweight2004, wls$rightweight2004)
+
+#create a weight split variable
+rpart::rpart(ha2011_bin ~ mosteverweigh2004, data = wls)
+wls$weigh2004_split <- ifelse(wls$mosteverweigh2004 < 168.5, 'Under168','Over168')
+
+#create subsets for each response
+wls_doc2004.full <- wls[!is.na(wls$doc2004_bin), ]
+wls_doc2011.full <- wls[!is.na(wls$doc2011_bin), ]
+wls_ha2004.full <- wls[!is.na(wls$ha2004_bin), ]
+wls_ha2011.full <- wls[!is.na(wls$ha2011_bin), ]
+
+```
+
+###Create `miss_class` function
+
+This function just calculates the misclassification rate for a binary classifier.
+
+```{r}
+
+miss_class <- function(preds, actual){
+    
+    t_p_a <- table(preds, actual)
+    
+    list(
+        'Total' = (t_p_a[1,2] + t_p_a[2,1]) / length(actual),
+        'PredNoWasYes' = t_p_a[1,2] / (sum(t_p_a[1,])),
+        'PredYesWasNo' = t_p_a[2,1] / (sum(t_p_a[2,]))
+    )
+    
+}
+
+```
+
+
+###Model for `doc2004`
+
+```{r}
+doc2004_glm <- glmer(
+    doc2004_bin ~ sex  + age_2004 + Rtype + THI2004 + 
+        BMI2004 + highbp2004 + diabetes2004 + stroke2004 +
+        smokpkyrs2004 + highchol2004 + highcholfam2004 +
+        HArelless552004 + 
+        sumdepressionindex2004 + alcoholdays2004 +
+        troublesleep04_bin + (1|idpub),
+    data = wls_doc2004.full, family = 'binomial',
+    control = glmerControl(
+        optimizer = "optimx", calc.derivs = FALSE,
+        optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
+    na.action = na.exclude
+)
+
+summary(doc2004_glm)
+miss_class(p <- predict(doc2004_glm, type = 'response') >= .5, 
+           wls_doc2004.full$doc2004_bin)
+```
+
+__This model was fit on `r scales::percent(mean(!is.na(p)))` of the "good" data.__
+
+###Model for `doc2011`
+
+```{r}
+doc2011_glm <- glmer(formula = doc2011_bin ~ sex + age_2011 + Rtype + THI2011 + 
+                    highbp2011 + smokpkyrs2004 + highchol2004 + diabetes2011 + 
+                    sumdepressionindex2004 + stroke2004 + alcoholdays2011 + 
+                    mosteverweigh2011 + HArelless552004 +
+                    highcholfam2004 + (1|idpub), 
+                  family = "binomial", data = wls_doc2011.full,
+                  control = glmerControl(
+                      optimizer = "optimx", calc.derivs = FALSE,
+                      optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
+                  na.action = na.exclude)
+
+summary(doc2011_glm)
+miss_class(p <- predict(doc2011_glm, type = 'response') >= .5, 
+           wls_doc2011.full$doc2011_bin)
+```
+
+__This model was fit on `r scales::percent(mean(!is.na(p)))` of the "good" data.__
+
+
+###Model for `ha2004`
+
+```{r}
+ha2004_glm <- 
+    glmer(ha2004_bin ~ sex + age_2004 + Rtype + THI2004  + alcoholdays2004 + 
+              highchol2004 + stressmakepos2004 + jailed2004 + 
+              diabetes2004 + overweight2004 + smokpkyrs2004 + (1|idpub), 
+          data = wls_ha2004.full, family = 'binomial',
+          control = glmerControl(
+              optimizer = "optimx", calc.derivs = FALSE,
+              optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
+          na.action = na.exclude)
+
+summary(ha2004_glm)
+miss_class(p <- predict(ha2004_glm, type = 'response') >= .5, 
+           wls_ha2004.full$ha2004_bin)
+
+```
+
+__This model was fit on `r scales::percent(mean(!is.na(p)))` of the "good" data.__
+
+###Model for `ha2011`
+
+```{r}
+ha2011_glm <- glmer(ha2011_bin ~ sex + age_2011 + Rtype + THI2011 + 
+                        alcoholdays2004 + highchol2004 +
+                        weigh2004_split + diabetes2004  + smokpkyrs2004 +
+                        compareAmerica2004 + (1|idpub), 
+                    data = wls_ha2011.full, 
+                    family = 'binomial',
+                    control = glmerControl(
+                        optimizer = "optimx", calc.derivs = FALSE,
+                        optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
+                    na.action = na.exclude)
+
+summary(ha2011_glm)
+miss_class(p <- predict(ha2011_glm, type = 'response') >= .5, 
+           wls_ha2011.full$ha2011_bin)
+```
+
+__This model was fit on `r scales::percent(mean(!is.na(p)))` of the "good" data.__
+
+###Results from all four regressions
+
+```{r echo = FALSE}
+library(memisc)
+
+signifs <- noquote("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
+
+foo <- mtable('DOC 2004' = doc2004_glm, 'HA 2004' = ha2004_glm,
+              'DOC 2011' = doc2011_glm, 'HA 2011' = ha2011_glm,
+              sdigits = 2, digits = 3)
+foo$calls <- signifs
+
+foo
+
+```
+
