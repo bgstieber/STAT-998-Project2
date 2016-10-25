@@ -5,3 +5,8 @@ Second set of questions
 (2) There are some variables like "age at which participant diagnosed with x", for those participants that were never diagnosed with x, this age is (as expected) NA. Do you have an idea of what a good replacement value would be? Perhaps replacing that value with some value larger than the max value in the data set? Replace with 0?
 
 (3) We know your desire is to see variables that can be intervened on. What is your desired output? Would you be satisfied with the results of a regression, or are you looking for more fine-tuned comparisons?
+
+    - want a ranking of important variables
+        - could use random forest to determine variable importance
+    - want ROC / AUC
+    - want misclassification rate for each model
