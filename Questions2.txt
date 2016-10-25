@@ -3,3 +3,5 @@ Second set of questions
 (1) In a project / analysis like this, are there variables that are commonly adjusted for? Currently, we are considering adjusting for sex, age, respondent type, and total household income. Do you think we're over or under adjusting?
 
 (2) There are some variables like "age at which participant diagnosed with x", for those participants that were never diagnosed with x, this age is (as expected) NA. Do you have an idea of what a good replacement value would be? Perhaps replacing that value with some value larger than the max value in the data set? Replace with 0?
+
+(3) We know your desire is to see variables that can be intervened on. What is your desired output? Would you be satisfied with the results of a regression, or are you looking for more fine-tuned comparisons?
