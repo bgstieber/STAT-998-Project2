@@ -59,7 +59,7 @@ wls_doc04 <- wls_doc04[names_doc04]
 miss_values <- stack(apply(wls_doc04, 2, function(x) mean(is.na(x))),
                      stringsAsFactors = FALSE) 
 
-final_names <- as.character(miss_values[miss_values$values <= 0.175, 2])
+final_names <- as.character(miss_values[miss_values$values <= 0.20, 2])
 
 wls_doc04 <- wls_doc04[final_names]
 
@@ -130,12 +130,21 @@ miss_class <- function(preds, actual){
 }
 
 #has a better misclassification rate than gfit3
+#10 % misclassification rate
+set.seed(123)
+
+train.set <- sample(nrow(wls_doc2004.full),
+                    .7 * nrow(wls_doc2004.full ), replace = F)
+
+wls_doc2004.full.train <- wls_doc2004.full[train.set,]
+wls_doc2004.full.valid <- wls_doc2004.full[-train.set, ]
 
 gfit2 <- glmer(
-    doc2004_bin ~ sex +age_2004 + Rtype +THI2004 + BMI2004 +
-        highbp2004 + diabetes2004 + 
-        smokpkdayX2004 + highchol2004 +
-        sumdepressionindex2004 + stroke2004 + alcoholdays2004 +
+    doc2004_bin ~ sex  + age_2004 + Rtype +THI2004 + 
+        BMI2004 + highbp2004 + diabetes2004 + stroke2004 +
+        smokpkyrs2004 + highchol2004 + highcholfam2004 +
+        HArelless552004 + 
+        sumdepressionindex2004 + alcoholdays2004 +
         troublesleepamt2004_binned + (1|idpub),
     data = wls_doc2004.full, family = 'binomial',
     control = glmerControl(
@@ -143,6 +152,26 @@ gfit2 <- glmer(
         optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
     na.action = na.exclude
 )
+
+gfit2.train <- glmer(
+    doc2004_bin ~ sex  + age_2004 + Rtype +THI2004 + 
+        BMI2004 + highbp2004 + diabetes2004 + stroke2004 +
+        smokpkyrs2004 + highchol2004 + highcholfam2004 +
+        HArelless552004 + 
+        sumdepressionindex2004 + alcoholdays2004 +
+        troublesleepamt2004_binned + (1|idpub),
+    data = wls_doc2004.full.train, family = 'binomial',
+    control = glmerControl(
+        optimizer = "optimx", calc.derivs = FALSE,
+        optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
+    na.action = na.omit
+)
+
+preds.valid <- predict(gfit2.train, re.form = NA,
+                       newdata = wls_doc2004.full.valid,
+                       type = 'response')
+
+miss_class(preds.valid >= .5, wls_doc2004.full.valid$doc2004_bin)
 
 gfit3 <- glmer(
     doc2004_bin ~ sex +age_2004 + Rtype +THI2004 + BMI2004 +
