@@ -12,6 +12,8 @@ library(randomForest)
 library(smbinning)
 library(stringr)
 
+run.rf = FALSE
+
 wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
              data.table = FALSE)
 
@@ -68,7 +70,7 @@ y = as.factor(wls_doc2011_complete$doc2011_bin)
 X = select(wls_doc2011_complete, -doc2011_bin, -idpub)
 
 X_modelmat <- model.matrix(~ -1 + ., data = X)
-
+if(run.rf){
 tune.rf = tuneRF(x = X_modelmat, y = y, ntree=600, mtryStart = 8, 
                  stepFactor = 1, nodesize = 5)
 
@@ -81,7 +83,7 @@ fit.rf  = randomForest(x = X_modelmat, y = y,
 
 ## Get the variable importance score
 varimp = varImpPlot(fit.rf)
-
+}
 
 #build up a prospective logistic regression
 
@@ -130,21 +132,30 @@ miss_class <- function(preds, actual){
 
 #need to somehow adjust for weight too 
 #either BMI or mosteverweigh
+wls_doc2011.full <- wls[!is.na(wls$doc2011_bin), ]
+
+#bin the troublesleepamt2004 variable
+
+wls_doc2011.full$troublesleepamt2004_binned <-
+    ifelse(wls_doc2011.full$troublesleepamt2004 == 'No',
+           'Monthlyorless', wls_doc2011.full$troublesleepamt2004)
+
 fit1.full <- glm(doc2011_bin ~ sex + age_2011 + Rtype + THI2011 + BMI2011 +
                      highbp2011 + smokpkyrs2004 + highchol2004 + 
                      diabetes2011 + sumdepressionindex2004 + stroke2004 + alcoholdays2011,
-                 data = wls_doc2011, family = 'binomial')
+                 data = wls_doc2011.full, family = 'binomial')
 
 fit2.full <- glm(formula = doc2011_bin ~ sex + age_2011 + Rtype + THI2011 + 
                      highbp2011 + smokpkyrs2004 + highchol2004 + diabetes2011 + 
                      sumdepressionindex2004 + stroke2004 + alcoholdays2011 + mosteverweigh2011, 
-                 family = "binomial", data = wls_doc2011)
+                 family = "binomial", data = wls_doc2011.full)
 
+#14.9% missclassification
 gfit1.full <- glmer(doc2011_bin ~ sex + age_2011 + Rtype + THI2011 + BMI2011 +
                     highbp2011 + smokpkyrs2004 + highchol2004 + 
                     diabetes2011 + sumdepressionindex2004 + stroke2004 + 
                     alcoholdays2011 + (1|idpub),
-                  data = wls_doc2011, family = 'binomial',
+                  data = wls_doc2011.full, family = 'binomial',
                   control = glmerControl(
                       optimizer = "optimx", calc.derivs = FALSE,
                       optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
@@ -152,11 +163,14 @@ gfit1.full <- glmer(doc2011_bin ~ sex + age_2011 + Rtype + THI2011 + BMI2011 +
 
 
 #has a better misclassification rate than gfit1.full
+#14.6 %
+## final model ##
 gfit2.full <- glmer(formula = doc2011_bin ~ sex + age_2011 + Rtype + THI2011 + 
                     highbp2011 + smokpkyrs2004 + highchol2004 + diabetes2011 + 
                     sumdepressionindex2004 + stroke2004 + alcoholdays2011 + 
-                    mosteverweigh2011 + (1|idpub), 
-                  family = "binomial", data = wls_doc2011,
+                    mosteverweigh2011 + HArelless552004 +
+                    highcholfam2004 + (1|idpub), 
+                  family = "binomial", data = wls_doc2011.full,
                   control = glmerControl(
                       optimizer = "optimx", calc.derivs = FALSE,
                       optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)),
