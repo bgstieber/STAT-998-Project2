@@ -11,6 +11,7 @@ library(optimx)
 library(randomForest)
 library(smbinning)
 library(stringr)
+library(glmnet)
 
 run.rf <- FALSE
 
@@ -32,7 +33,7 @@ wls$ha2011_bin <- ifelse(wls$HA2011 == 'Yes', 1, 0)
 wls$age_2004 <- 2004 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1938.5, 
                               wls$birthyr)
 
- wls$age_2011 <- 2011 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1938.5, 
+wls$age_2011 <- 2011 - ifelse(is.na(wls$birthyr) & wls$Rtype == 'g', 1938.5, 
                                wls$birthyr)
 
 #create relative heart attack variable
@@ -48,7 +49,7 @@ wls_ha2011 <- wls[!is.na(wls$ha2011_bin), ]
 #collected in 2011
 
 names_to_remove <- c('HA2004','HAC2004','ha2004','birthyr',
-    'doc2004','doc2011', 'HAC2011','HA2011')
+    'doc2004','doc2011', 'HAC2011','HA2011', 'married1993')
 
 names_ha2011 <- names(wls_ha2011)[!names(wls_ha2011) %in% names_to_remove]
 
@@ -57,7 +58,7 @@ wls_ha2011 <- wls_ha2011[names_ha2011]
 miss_values <- stack(apply(wls_ha2011, 2, function(x) mean(is.na(x))),
                      stringsAsFactors = FALSE) 
 
-final_names <- as.character(miss_values[miss_values$values <= .175, 2])
+final_names <- as.character(miss_values[miss_values$values <= .20, 2])
 
 wls_ha2011 <- wls_ha2011[final_names]
 
@@ -75,16 +76,18 @@ X_data <- cbind(wls_ha2011_complete$ha2011_bin, X_modelmat)
 
 X_data <- data.frame(X_data)
 
-fit2 = gbm(V1 ~. , data = X_data, n.trees=10000, 
-           distribution='adaboost', interaction.depth = 2, 
-           cv.folds=10)
-fit2$cv.error
-best.iter <- gbm.perf(fit2, method="cv") 
+
 
 summary(fit2)
 
 if(run.rf){
 
+    fit2 = gbm(V1 ~. , data = X_data, n.trees=10000, 
+               distribution='adaboost', interaction.depth = 2, 
+               cv.folds=10)
+    fit2$cv.error
+    best.iter <- gbm.perf(fit2, method="cv") 
+    
 tune.rf = tuneRF(x = X_modelmat, y = y, ntree=1500, mtryStart = 8, 
                  stepFactor = 1, nodesize = 5)
 
@@ -131,7 +134,6 @@ miss_class <- function(preds, actual){
     
 }
 
-miss_class(preds >= .5, y)
 
 wls_ha2011.full <- wls[!is.na(wls$ha2011_bin), ]
 
@@ -178,11 +180,11 @@ gfit2.full <- glmer(ha2011_bin ~ sex + age_2011 + Rtype + THI2011 +
                     na.action = na.exclude)
 
 
-#final model?
+#final model? - 21.6% misclassiffication
 gfit3.full <- glmer(ha2011_bin ~ sex + age_2011 + Rtype + THI2011 + 
                         alcoholdays2004 + highchol2004 +
                         weigh2004_split + diabetes2004  + smokpkyrs2004 +
-                        (1|idpub), 
+                        compareAmerica2004 + (1|idpub), 
                     data = wls_ha2011.full, 
                     family = 'binomial',
                     control = glmerControl(
