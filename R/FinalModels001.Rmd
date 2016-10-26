@@ -22,7 +22,8 @@ library(lme4)
 library(optimx)
 
 
-wls <- fread("WLS2.csv", data.table = FALSE)
+wls <- fread("C:/Users/Brad/Desktop/STAT 998/Project 2/WLS2.csv",
+             data.table = FALSE)
 
 #create variables
 
@@ -196,6 +197,81 @@ foo <- mtable('DOC 2004' = doc2004_glm, 'HA 2004' = ha2004_glm,
 foo$calls <- signifs
 
 foo
+
+```
+
+###Create ROC curves
+
+```{r echo = FALSE}
+library(ROCR)
+doc04_preds <- predict(doc2004_glm, type = 'response')
+doc04_actuals <- wls_doc2004.full$doc2004_bin
+doc11_preds <- predict(doc2011_glm, type = 'response')
+doc11_actuals <- wls_doc2011.full$doc2011_bin
+ha04_preds <- predict(ha2004_glm, type = 'response')
+ha04_actuals <- wls_ha2004.full$ha2004_bin
+ha11_preds <- predict(ha2011_glm, type = 'response')
+ha11_actuals <- wls_ha2011.full$ha2011_bin
+
+doc04_roc <- performance(prediction(doc04_preds,
+                                 doc04_actuals),
+                         'tpr','fpr')
+
+doc04_auc <- performance(prediction(doc04_preds,
+                                 doc04_actuals),
+                         'auc')
+doc04_auc <- doc04_auc@y.values[[1]]
+
+doc11_roc <- performance(prediction(doc11_preds,
+                                 doc11_actuals),
+                         'tpr','fpr')
+
+doc11_auc <- performance(prediction(doc11_preds,
+                                 doc11_actuals),
+                         'auc')
+doc11_auc <- doc11_auc@y.values[[1]]
+
+ha04_roc <- performance(prediction(ha04_preds,
+                                 ha04_actuals),
+                         'tpr','fpr')
+
+ha04_auc <- performance(prediction(ha04_preds,
+                                 ha04_actuals),
+                         'auc')
+
+ha04_auc <- ha04_auc@y.values[[1]]
+
+
+ha11_roc <- performance(prediction(ha11_preds,
+                                 ha11_actuals),
+                         'tpr','fpr')
+
+ha11_auc <- performance(prediction(ha11_preds,
+                                 ha11_actuals),
+                         'auc')
+
+ha11_auc <- ha11_auc@y.values[[1]]
+
+cols_to_use <- c("#A1D99B", "#31A354",
+                 "#BCBDDC", "#756BB1"
+                 )
+
+lgd_text <- paste(paste(c("DOC '04","DOC '11","HA '04","HA '11"), '- AUC:'),
+                  round(c(doc04_auc, doc11_auc, ha04_auc, ha11_auc),2)
+)
+
+
+plot(doc04_roc, col = cols_to_use[1], main = 'ROC Curves for the Four Response Variables')
+plot(doc11_roc, col = cols_to_use[2], add = T)
+plot(ha04_roc, col = cols_to_use[3], add = T)
+plot(ha11_roc, col = cols_to_use[4], add = T)
+lines(seq(0,1,.1), seq(0,1,.1), lty = 2)
+legend('bottomright', bty = 'n',
+       col = cols_to_use,
+       legend = lgd_text,
+       lty = 1)
+
+
 
 ```
 
