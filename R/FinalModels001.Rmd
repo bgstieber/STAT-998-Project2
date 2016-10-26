@@ -137,10 +137,8 @@ __This model was fit on `r scales::percent(mean(!is.na(p)))` of the "good" data.
 
 ```{r}
 doc2011_glm <- glmer(formula = doc2011_bin ~ sex + age_2011 + Rtype + THI2011 + 
-                    highbp2011 + smokpkyrs2004 + highchol2004 + diabetes2011 + 
-                    sumdepressionindex2004 + stroke2004 + alcoholdays2011 + 
-                    mosteverweigh2011 + HArelless552004 +
-                    highcholfam2004 + (1|idpub), 
+                               highbp2011 + smokpkyrs2004 + diabetes2011 + 
+                               alcoholdays2011 + mosteverweigh2011 + HArelless552004 +                                           highcholfam2004 + highchol2011 + stroke2011 +                                                     sumdepressionindex2011 + (1 | idpub), 
                   family = "binomial", data = wls_doc2011.full,
                   control = glmerControl(
                       optimizer = "optimx", calc.derivs = FALSE,
@@ -179,10 +177,10 @@ __This model was fit on `r scales::percent(mean(!is.na(p)))` of the "good" data.
 ###Model for `ha2011`
 
 ```{r}
-ha2011_glm <- glmer(ha2011_bin ~ sex + age_2011 + Rtype + THI2011 + 
-                        alcoholdays2004 + highchol2004 +
-                        weigh2004_split + diabetes2004  + smokpkyrs2004 +
-                        compareAmerica2004 + (1|idpub), 
+ha2011_glm <- 
+    glmer(ha2011_bin ~ sex + age_2011 + Rtype + THI2011 + diabetes2004 +  
+             compareAmerica2004 + smokpkyrs2011 + 
+             alcoholdays2011 + highchol2011 + smokpkyrs2011 + (1 | idpub), 
                     data = wls_ha2011.full, 
                     family = 'binomial',
                     control = glmerControl(
