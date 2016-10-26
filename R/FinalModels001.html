@@ -220,6 +220,12 @@ div.tocify {
 
 
 <p>This document contains the four models I have fit as a result of the various variable selection methods we’ve used.</p>
+<p>Notice that in our fits using the <code>lme4</code> package, we specify a few options in <code>glmerControl</code>:</p>
+<pre class="r"><code>control = glmerControl(
+        optimizer = &quot;optimx&quot;, calc.derivs = FALSE,
+        optCtrl = list(method = &quot;nlminb&quot;, starttests = FALSE, kkt = FALSE))</code></pre>
+<p>These specifications allow for a more performant model fit. Further details can be found in the <a href="https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html"><code>lme4</code> performance tips vignette</a>.</p>
+<p>In each model, we also specify <code>na.action = na.exclude</code>, this is so that when we get predicted values from the model object we will get <code>NA</code> for observations not used in the model fitting. The default for <code>na.action</code> is <code>na.omit</code> which means that the predicted values for observations not used in the model fitting will be omitted from the prediction vector. Using <code>na.exclude</code> makes it easier to add predicted values to a <code>data.frame</code> with incomplete cases.</p>
 <div id="read-and-transform-data" class="section level3">
 <h3>Read and Transform Data</h3>
 <pre class="r"><code>library(data.table)
