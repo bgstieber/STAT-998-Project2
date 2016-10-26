@@ -14,6 +14,19 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 This document contains the four models I have fit as a result of the various variable selection methods we've used.
 
+Notice that in our fits using the `lme4` package, we specify a few options in `glmerControl`:
+
+```{r eval = FALSE}
+control = glmerControl(
+        optimizer = "optimx", calc.derivs = FALSE,
+        optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE))
+
+```
+
+These specifications allow for a more performant model fit. Further details can be found in the [`lme4` performance tips vignette](https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html).
+
+In each model, we also specify `na.action = na.exclude`, this is so that when we get predicted values from the model object we will get `NA` for observations not used in the model fitting. The default for `na.action` is `na.omit` which means that the predicted values for observations not used in the model fitting will be omitted from the prediction vector. Using `na.exclude` makes it easier to add predicted values to a `data.frame` with incomplete cases.
+
 ###Read and Transform Data
 
 ```{r}
