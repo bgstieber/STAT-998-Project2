@@ -10,3 +10,7 @@ Second set of questions
         - could use random forest to determine variable importance
     - want ROC / AUC
     - want misclassification rate for each model
+
+
+For 2004 responses - don't use 2011 variables
+For 2011 try to use 2011 instead of 2004
