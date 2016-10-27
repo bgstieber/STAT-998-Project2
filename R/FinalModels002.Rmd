@@ -173,6 +173,7 @@ summary(ha2004_glm)
 miss_class(p <- predict(ha2004_glm, type = 'response') >= .5, 
            wls_ha2004.full$ha2004_bin)
 
+
 ```
 
 __This model was fit on `r scales::percent(mean(!is.na(p)))` of the "good" data.__
